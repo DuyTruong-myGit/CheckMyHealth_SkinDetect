@@ -4,6 +4,7 @@ require('dotenv').config();
 
 // Nhập routes (MỚI)
 const authRoutes = require('./routes/auth.routes'); 
+const diagnosisRoutes = require('./routes/diagnosis.routes');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 // Tất cả các route trong 'authRoutes' sẽ có tiền tố là '/api/auth'
 // Ví dụ: /api/auth/register, /api/auth/login
 app.use('/api/auth', authRoutes);
+app.use('/api/diagnose', diagnosisRoutes);
 
 
 // --- Xuất app ra ---
