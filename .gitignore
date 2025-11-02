@@ -1,0 +1,14 @@
+# Dependencies
+/node_modules
+
+# Production
+.env
+*.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
