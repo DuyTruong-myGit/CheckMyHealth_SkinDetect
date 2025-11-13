@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth.routes');
 const diagnosisRoutes = require('./routes/diagnosis.routes');
 const profileRoutes = require('./routes/profile.routes');
 const adminRoutes = require('./routes/admin.routes');
+const feedbackRoutes = require('./routes/feedback.routes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/diagnose', diagnosisRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 
 // --- Xuất app ra ---
