@@ -1,31 +1,29 @@
-const mysql = require('mysql2/promise'); // Dùng bản promise để hỗ trợ async/await
-require('dotenv').config(); // Tải các biến từ file .env
+const mysql = require('mysql2/promise');
+require('dotenv').config(); 
 
-// Tạo một connection pool thay vì 1 connection
-// Pool quản lý nhiều kết nối hiệu quả
+// Dùng 1 chuỗi kết nối duy nhất thay vì 4 biến
+// Render sẽ cung cấp biến 'DATABASE_URL' này
+const connectionString = process.env.DATABASE_URL;
+
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    connectionString: connectionString, // <-- THAY ĐỔI CHÍNH Ở ĐÂY
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
-// Hàm kiểm tra kết nối (tùy chọn nhưng nên có)
+// Hàm kiểm tra kết nối (giữ nguyên)
 const testConnection = async () => {
     try {
         const connection = await pool.getConnection();
         console.log('✅ Database connected successfully!');
-        connection.release(); // Trả connection về pool
+        connection.release(); 
     } catch (error) {
         console.error('❌ Database connection failed:', error.message);
-        process.exit(1); // Thoát app nếu không kết nối được DB
+        process.exit(1);
     }
 };
 
-// Export pool và hàm test
 module.exports = {
     pool,
     testConnection
