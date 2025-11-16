@@ -13,6 +13,7 @@ import AdminNews from './pages/AdminNews.jsx'
 import NewsPage from './pages/NewsPage.jsx'
 import AdminUsers from './pages/AdminUsers.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
+import AdminReports from './pages/AdminReports.jsx'
 import NotFound from './pages/NotFound.jsx'
 import './App.css'
 
@@ -60,7 +61,7 @@ function App() {
         <Route index element={<AdminDashboard />} />
         <Route path="news" element={<AdminNews />} />
         <Route path="users" element={<AdminUsers />} />
-        <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
+        <Route path="reports" element={<AdminReports />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

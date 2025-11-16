@@ -38,6 +38,9 @@ router.use(authMiddleware, adminMiddleware);
  *         description: Lỗi máy chủ
  */
 router.get('/statistics', adminController.getStatistics);
+router.get('/statistics/timeseries', adminController.getStatisticsTimeseries);
+router.get('/statistics/breakdown', adminController.getStatisticsBreakdown);
+router.get('/statistics/export', adminController.exportStatistics);
 
 // === User Management ===
 

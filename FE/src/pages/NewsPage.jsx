@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import './History.css'
 import newsService from '../services/newsService'
+import Pagination from '../components/Pagination.jsx'
 
 const NewsPage = () => {
   const [sources, setSources] = useState([])
   const [articles, setArticles] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(12)
+  const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -63,6 +67,7 @@ const NewsPage = () => {
       // Shuffle articles before displaying
       const shuffledArticles = shuffleArray(allArticles)
       setArticles(shuffledArticles)
+      setCurrentPage(1)
       if (allArticles.length === 0) {
         setError('Không tìm thấy bài báo nào')
       }
@@ -82,6 +87,13 @@ const NewsPage = () => {
     }
     initLoad()
   }, [])
+
+  // Paginated articles slice
+  const paginatedArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return articles.slice(startIndex, endIndex)
+  }, [articles, currentPage, itemsPerPage])
 
   return (
     <div className="history-container">
@@ -111,8 +123,9 @@ const NewsPage = () => {
         )}
 
         {!loading && articles.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-            {articles.map((article) => (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              {paginatedArticles.map((article) => (
               <a
                 key={article.id}
                 href={article.link}
@@ -165,8 +178,23 @@ const NewsPage = () => {
                   </div>
                 </div>
               </a>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(articles.length / itemsPerPage))}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={articles.length}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
+                customItemsPerPage={customItemsPerPage}
+                onCustomItemsPerPageChange={setCustomItemsPerPage}
+                itemLabel="bài báo"
+              />
+            </div>
+          </>
         )}
 
         {!loading && articles.length === 0 && sources.length > 0 && !error && (

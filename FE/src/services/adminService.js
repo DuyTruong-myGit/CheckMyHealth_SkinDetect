@@ -21,6 +21,40 @@ export const getStatistics = async () => {
   }
 }
 
+export const getTimeseries = async (metric = 'diagnoses', period = 30) => {
+  try {
+    const response = await apiClient(`/api/admin/statistics/timeseries?metric=${encodeURIComponent(metric)}&period=${encodeURIComponent(period)}`, {
+      method: 'GET'
+    })
+    return response
+  } catch (error) {
+    throw new Error(error.message || 'Không thể lấy chuỗi thời gian')
+  }
+}
+
+export const getBreakdown = async (by = 'role') => {
+  try {
+    const response = await apiClient(`/api/admin/statistics/breakdown?by=${encodeURIComponent(by)}`, {
+      method: 'GET'
+    })
+    return response
+  } catch (error) {
+    throw new Error(error.message || 'Không thể lấy breakdown')
+  }
+}
+
+export const exportStatisticsCSV = async (params = {}) => {
+  const query = new URLSearchParams(params).toString()
+  // use window.fetch to get blob (apiClient parses JSON)
+  const res = await fetch(`/api/admin/statistics/export?${query}`, { method: 'GET', credentials: 'include' })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Export failed: ${res.status}`)
+  }
+  const blob = await res.blob()
+  return blob
+}
+
 /**
  * Lấy danh sách người dùng (Admin only)
  * @param {string} search - Tìm kiếm theo email hoặc tên

@@ -1,13 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import './AdminUsers.css'
 import newsService from '../services/newsService'
+import Pagination from '../components/Pagination.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 const AdminNews = () => {
   const [sources, setSources] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+  const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
   const [url, setUrl] = useState('')
   const [label, setLabel] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmTarget, setConfirmTarget] = useState(null)
+  const [confirmLabel, setConfirmLabel] = useState('')
 
   // Load sources from API
   const loadSources = async () => {
@@ -16,6 +24,7 @@ const AdminNews = () => {
       setError('')
       const data = await newsService.getAllSources()
       setSources(data)
+      setCurrentPage(1)
     } catch (err) {
       console.error('Failed to load sources:', err)
       setError('Lỗi khi tải danh sách nguồn tin')
@@ -27,6 +36,12 @@ const AdminNews = () => {
   useEffect(() => {
     loadSources()
   }, [])
+
+  const paginatedSources = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return sources.slice(startIndex, endIndex)
+  }, [sources, currentPage, itemsPerPage])
 
   const handleAdd = async () => {
     if (!url) {
@@ -56,6 +71,25 @@ const AdminNews = () => {
     } catch (err) {
       console.error('Failed to delete source:', err)
       setError(err.response?.data?.message || 'Lỗi khi xóa nguồn tin')
+    }
+  }
+
+  const openConfirm = (id, labelOrUrl) => {
+    setConfirmTarget(id)
+    setConfirmLabel(labelOrUrl)
+    setConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!confirmTarget) return
+    try {
+      setConfirmOpen(false)
+      await handleRemove(confirmTarget)
+    } catch (err) {
+      // handleRemove already sets error
+    } finally {
+      setConfirmTarget(null)
+      setConfirmLabel('')
     }
   }
 
@@ -128,22 +162,48 @@ const AdminNews = () => {
         ) : sources.length === 0 ? (
           <p>Chưa có nguồn tin nào. Thêm URL để hiển thị trên trang Tin tức.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {sources.map((s) => (
-              <div key={s.source_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 8, border: '1px solid #e5e7eb', borderRadius: 6 }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{s.label || new URL(s.url).hostname}</div>
-                  <div style={{ color: '#6b7280' }}>{s.url}</div>
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {paginatedSources.map((s) => (
+                <div key={s.source_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 8, border: '1px solid #e5e7eb', borderRadius: 6 }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{s.label || new URL(s.url).hostname}</div>
+                    <div style={{ color: '#6b7280' }}>{s.url}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn" onClick={() => navigator.clipboard?.writeText(s.url)}>Sao chép</button>
+                    <button className="btn" onClick={() => openConfirm(s.source_id, s.label || s.url)}>Xóa</button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn" onClick={() => navigator.clipboard?.writeText(s.url)}>Sao chép</button>
-                  <button className="btn" onClick={() => handleRemove(s.source_id)}>Xóa</button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {sources.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(sources.length / itemsPerPage))}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={sources.length}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
+                customItemsPerPage={customItemsPerPage}
+                onCustomItemsPerPageChange={setCustomItemsPerPage}
+                itemLabel="nguồn"
+              />
+            )}
+          </>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa nguồn"
+        message={confirmLabel ? `Bạn có chắc muốn xóa nguồn: ${confirmLabel} ?` : 'Bạn có chắc muốn xóa nguồn này?'}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        type="danger"
+      />
     </section>
   )
 }

@@ -8,7 +8,8 @@ const Pagination = ({
   totalItems,
   onItemsPerPageChange,
   customItemsPerPage,
-  onCustomItemsPerPageChange
+  onCustomItemsPerPageChange,
+  itemLabel = 'người dùng'
 }) => {
   const getPageNumbers = () => {
     const pages = []
@@ -52,7 +53,7 @@ const Pagination = ({
     <div className="pagination">
       <div className="pagination__info">
         <span>
-          Hiển thị {startItem}-{endItem} trong tổng số {totalItems} người dùng
+          Hiển thị {startItem}-{endItem} trong tổng số {totalItems} {itemLabel}
         </span>
         <div className="pagination__per-page">
           <label>Hiển thị:</label>
