@@ -1,6 +1,21 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
+// -----------------------------------------------------------------
+// BẮT ĐẦU SỬA LỖI
+// -----------------------------------------------------------------
+// Thêm 2 dòng này để file này tự đọc được file .env
+// mà không cần phụ thuộc vào app.js
+const path = require('path');
+// Chỉ định đường dẫn .env ở thư mục gốc BE/
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') }); 
+
+// Bây giờ process.env.PORT sẽ là '8000' (từ file .env)
+const PORT = process.env.PORT || 8000; // Dùng 8000 làm dự phòng
+// -----------------------------------------------------------------
+// KẾT THÚC SỬA LỖI
+// -----------------------------------------------------------------
+
 const options = {
     definition: {
         openapi: '3.0.0',
@@ -13,12 +28,24 @@ const options = {
                 email: 'support@checkmyhealth.com'
             }
         },
+        // -----------------------------------------------------------------
+        // CẬP NHẬT SERVERS
+        // -----------------------------------------------------------------
         servers: [
             {
-                url: `http://localhost:${process.env.PORT || 3000}`,
-                description: 'Development server'
+                // Sửa thành PORT (đã được định nghĩa ở trên)
+                url: `http://localhost:${PORT}`, 
+                description: 'Development server (Local)'
+            },
+            {
+                // Thêm server production (Render)
+                // (Hãy thêm BACKEND_URL vào Environment Variables trên Render
+                // với giá trị là https://checkmyhealth-skindetect.onrender.com)
+                url: process.env.BACKEND_URL || 'https://checkmyhealth-skindetect.onrender.com',
+                description: 'Production server (Render)'
             }
         ],
+        // -----------------------------------------------------------------
         components: {
             securitySchemes: {
                 bearerAuth: {
@@ -172,4 +199,3 @@ module.exports = {
     swaggerUi,
     swaggerSpec
 };
-
