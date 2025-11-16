@@ -1,13 +1,11 @@
 // File: FE/src/config/api.js
 
-// 1. Đọc biến VITE_API_URL từ .env (do Vercel cung cấp)
+// Lấy biến từ Vercel (khi deploy)
 const API_BASE_URL = import.meta.env.VITE_API_URL 
+    
+    // Nếu không có, dùng localhost (khi chạy ở máy bạn)
+    || 'http://localhost:8000/api'; // (Dùng port 8000 hoặc 3000 tùy vào .env của BE)
 
-// 2. Cung cấp một giá trị dự phòng cho local
-                     || 'http://localhost:3000/api'; // Hoặc port BE của bạn
+const API_TIMEOUT = 10000; 
 
-// 3. Đặt timeout
-const API_TIMEOUT = 10000; // 10 giây
-
-// 4. Xuất (export) ra
 export { API_BASE_URL, API_TIMEOUT };
