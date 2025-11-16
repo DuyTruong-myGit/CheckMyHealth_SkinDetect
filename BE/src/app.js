@@ -8,6 +8,8 @@ const diagnosisRoutes = require('./routes/diagnosis.routes');
 const profileRoutes = require('./routes/profile.routes');
 const adminRoutes = require('./routes/admin.routes');
 const newsRoutes = require('./routes/news.routes');
+const chatRoutes = require('./routes/chat.routes.js');
+const feedbackRoutes = require('./routes/feedback.routes.js')
 
 // Database initialization
 const { initializeDatabase } = require('./config/init');
@@ -63,6 +65,8 @@ app.use('/api/diagnose', diagnosisRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Initialize database tables
 initializeDatabase().catch(error => {

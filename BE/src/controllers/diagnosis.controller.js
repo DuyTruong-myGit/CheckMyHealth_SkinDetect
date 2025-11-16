@@ -29,7 +29,17 @@ const diagnosisController = {
             }
 
             const userId = req.user.userId;
-            const imageUrl = req.file.path;
+
+            // === SỬA LỖI Ở ĐÂY ===
+            // Lấy URL từ 'secure_url' hoặc 'url', không phải 'path'
+            const imageUrl = req.file.secure_url || req.file.url;
+            // ====================
+
+            // Kiểm tra lại nếu imageUrl vẫn undefined (dù hiếm)
+            if (!imageUrl) {
+                 return res.status(500).json({ message: 'Lỗi khi upload. Không nhận được URL ảnh.' });
+            }
+            
             const aiResult = await callAiApiMock(imageUrl);
 
             // Thêm image_url vào kết quả JSON để lưu vào DB
@@ -50,13 +60,13 @@ const diagnosisController = {
             res.status(200).json(resultToSave);
                 
         } catch (error) {
+            console.error('Lỗi trong hàm diagnose:', error); // Log lỗi chi tiết
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     },
 
     /**
      * Lấy lịch sử chẩn đoán
-     * (Đây là phần code bị thiếu)
      */
     getHistory: async (req, res) => {
         try {
@@ -70,6 +80,7 @@ const diagnosisController = {
             res.status(200).json(history);
             
         } catch (error) {
+            console.error('Lỗi trong hàm getHistory:', error); // Log lỗi chi tiết
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }
