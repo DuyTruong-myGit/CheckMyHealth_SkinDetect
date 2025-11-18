@@ -135,7 +135,21 @@ router.put('/', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/avatar', authMiddleware, uploadCloud.single('image'),
+router.put(
+    '/avatar',
+    authMiddleware,
+    (req, res, next) => {
+        uploadCloud.single('image')(req, res, (err) => {
+            if (err) {
+                console.error('Upload avatar error:', err);
+                return res.status(400).json({
+                    message: 'Lỗi upload ảnh. Vui lòng thử lại với file khác.',
+                    error: err.message || String(err)
+                });
+            }
+            next();
+        });
+    },
     async (req, res) => {
         try {
             if (!req.file) {
@@ -155,6 +169,7 @@ router.put('/avatar', authMiddleware, uploadCloud.single('image'),
             });
 
         } catch (error) {
+            console.error('Error updating avatar:', error);
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }
