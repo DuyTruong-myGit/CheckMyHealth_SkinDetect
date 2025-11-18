@@ -3,6 +3,9 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { authMiddleware } = require('../middleware/auth.middleware');
 const { adminMiddleware } = require('../middleware/admin.middleware');
+router.get('/statistics/export', adminController.exportStatistics);
+router.delete('/feedback/:feedbackId', adminController.deleteFeedback);
+router.put('/feedback/:feedbackId/status', adminController.updateFeedbackStatus);
 
 // Tuyến đường chung, bảo vệ tất cả API bên dưới
 router.use(authMiddleware, adminMiddleware);
@@ -41,6 +44,7 @@ router.get('/statistics', adminController.getStatistics);
 router.get('/statistics/timeseries', adminController.getStatisticsTimeseries);
 router.get('/statistics/breakdown', adminController.getStatisticsBreakdown);
 router.get('/statistics/export', adminController.exportStatistics);
+router.get('/feedback', adminController.getFeedbackList);
 
 // === User Management ===
 

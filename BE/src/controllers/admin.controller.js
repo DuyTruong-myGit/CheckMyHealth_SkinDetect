@@ -2,7 +2,8 @@ const userModel = require('../models/user.model');
 const diagnosisModel = require('../models/diagnosis.model');
 const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
-
+const feedbackModel = require('../models/feedback.model');
+const notificationModel = require('../models/notification.model');
 const adminController = {
     /**
      * Lấy số liệu thống kê cho dashboard
@@ -273,6 +274,19 @@ const adminController = {
     },
 
     /**
+     * (Admin) Lấy danh sách feedback
+     */
+    getFeedbackList: async (req, res) => {
+        try {
+            // Gọi hàm model vừa tạo
+            const feedbackList = await feedbackModel.getAll();
+            res.status(200).json(feedbackList);
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+    /**
      * (Admin) Lấy lịch sử chẩn đoán của 1 user cụ thể
      */
     getHistoryForUser: async (req, res) => {
@@ -281,6 +295,55 @@ const adminController = {
             // Dùng lại hàm model của user
             const history = await diagnosisModel.findByUserId(userId); 
             res.status(200).json(history);
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+    /**
+     * (Admin) Xóa phản hồi
+     */
+    deleteFeedback: async (req, res) => {
+        try {
+            const { feedbackId } = req.params;
+            await feedbackModel.delete(feedbackId);
+            res.status(200).json({ message: 'Đã xóa phản hồi.' });
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+    /**
+     * (Admin) Cập nhật trạng thái phản hồi & Gửi thông báo
+     */
+    updateFeedbackStatus: async (req, res) => {
+        try {
+            const { feedbackId } = req.params;
+            const { status } = req.body; // 'processing' hoặc 'resolved'
+
+            // 1. Cập nhật trạng thái trong DB
+            await feedbackModel.updateStatus(feedbackId, status);
+
+            // 2. Lấy thông tin feedback để biết ai là người gửi
+            const feedback = await feedbackModel.getById(feedbackId);
+
+            // 3. Nếu có user_id (không phải ẩn danh), tạo thông báo
+            if (feedback && feedback.user_id) {
+                let title = 'Phản hồi hệ thống';
+                let message = '';
+
+                if (status === 'processing') {
+                    title = 'Đã tiếp nhận phản hồi';
+                    message = 'Chúng tôi đã nhận được phản hồi của bạn và đang xem xét.';
+                } else if (status === 'resolved') {
+                    title = 'Phản hồi đã được xử lý';
+                    message = 'Cảm ơn bạn đã đóng góp. Vấn đề của bạn đã được giải quyết.';
+                }
+
+                await notificationModel.create(feedback.user_id, title, message);
+            }
+
+            res.status(200).json({ message: 'Cập nhật trạng thái thành công.' });
         } catch (error) {
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }

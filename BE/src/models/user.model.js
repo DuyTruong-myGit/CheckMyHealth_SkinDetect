@@ -25,13 +25,12 @@ const userModel = {
      */
     create: async (email, passwordHash, fullName) => {
         try {
-            const [result] = await pool.query(
-                // Cột 'role' sẽ tự động nhận giá trị DEFAULT 'user'
-                'INSERT INTO users (email, password_hash, full_name) VALUES (?, ?, ?)',
-                [email, passwordHash, fullName]
-            );
-            // Trả về ID của user vừa được tạo
-            return result.insertId;
+            const [result] = await db.query(
+            `INSERT INTO users (email, password_hash, full_name, avatar_url) 
+            VALUES (?, ?, ?, ?)`,
+            [email, password_hash, full_name, avatar_url]
+        );
+        return result.insertId;
         } catch (error) {
             console.error('Error creating user:', error);
             throw error;

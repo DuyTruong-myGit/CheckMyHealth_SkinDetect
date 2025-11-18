@@ -1,7 +1,6 @@
 const userModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
 const authController = {
     /**
      * Xử lý đăng ký người dùng mới
@@ -10,31 +9,30 @@ const authController = {
         try {
             const { email, password, fullName } = req.body;
 
-            // 1. Validate input (cơ bản)
             if (!email || !password || !fullName) {
                 return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin.' });
             }
 
-            // 2. Kiểm tra email đã tồn tại chưa
             const existingUser = await userModel.findByEmail(email);
             if (existingUser) {
                 return res.status(409).json({ message: 'Email đã được sử dụng.' });
             }
 
-            // 3. Hash mật khẩu
             const salt = await bcrypt.genSalt(10);
             const passwordHash = await bcrypt.hash(password, salt);
 
-            // 4. Lưu user vào DB (model sẽ tự gán role='user')
-            const userId = await userModel.create(email, passwordHash, fullName);
+            // Tạo avatar mặc định
+            const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=3B82F6&color=fff&bold=true&size=256`;
 
-            // 5. Trả về thành công
+            const userId = await userModel.create(email, passwordHash, fullName, defaultAvatar);
+
             res.status(201).json({ 
                 message: 'Đăng ký thành công!', 
-                userId: userId 
+                userId 
             });
 
         } catch (error) {
+            console.error('Lỗi đăng ký:', error);
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     },
