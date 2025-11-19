@@ -8,6 +8,8 @@
     "install:all": "npm run install:be && npm run install:fe"
   },
   "dependencies": {
+    "moment-timezone": "^0.6.0",
+    "node-cron": "^4.2.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   }
