@@ -25,12 +25,12 @@ const userModel = {
      */
     create: async (email, passwordHash, fullName) => {
         try {
+            // Không cần thêm avatar_url vào đây, DB sẽ tự gán NULL
             const [result] = await pool.query(
-            `INSERT INTO users (email, password_hash, full_name, avatar_url) 
-            VALUES (?, ?, ?, ?)`,
-            [email, passwordHash, fullName, avatar_url]
-        );
-        return result.insertId;
+                'INSERT INTO users (email, password_hash, full_name) VALUES (?, ?, ?)',
+                [email, passwordHash, fullName] 
+            );
+            return result.insertId;
         } catch (error) {
             console.error('Error creating user:', error);
             throw error;
