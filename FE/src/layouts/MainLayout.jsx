@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
-import SiteHeader from '../components/SiteHeader.jsx'
-import SiteFooter from '../components/SiteFooter.jsx'
-import ChatLauncher from '../components/ChatLauncher.jsx'
+import SiteHeader from '../components/layout/SiteHeader/SiteHeader.jsx'
+import SiteFooter from '../components/layout/SiteFooter/SiteFooter.jsx'
+import ChatLauncher from '../components/features/chat/ChatLauncher/ChatLauncher.jsx'
 
 const MainLayout = () => {
   return (

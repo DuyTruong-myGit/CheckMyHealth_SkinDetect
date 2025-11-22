@@ -66,7 +66,16 @@ export const getUsers = async (search = '') => {
     const response = await apiClient(`/api/admin/users${query}`, {
       method: 'GET',
     })
-    return Array.isArray(response) ? response : []
+    // Backend trả về { items: [...], total, page, pageSize }
+    // Nếu là array (backward compatibility), trả về trực tiếp
+    if (Array.isArray(response)) {
+      return response
+    }
+    // Nếu là object có items, trả về items
+    if (response && response.items && Array.isArray(response.items)) {
+      return response.items
+    }
+    return []
   } catch (error) {
     if (error.message.includes('401') || error.message.includes('403')) {
       throw error

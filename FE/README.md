@@ -27,6 +27,8 @@ VITE_DB_NAME=skin_db
 - `VITE_DB_NAME`: tên database backend sử dụng (`skin_db`)
 - `VITE_API_TIMEOUT`: thời gian timeout (ms) khi gọi API
 
+**Lưu ý**: Tính năng bản đồ sử dụng OpenStreetMap (miễn phí, không cần API key)
+
 ## Chạy dự án
 
 ```bash

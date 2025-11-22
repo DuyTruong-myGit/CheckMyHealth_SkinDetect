@@ -1,0 +1,322 @@
+import { useState, useEffect } from 'react'
+import { useAuth } from '../../../contexts/AuthContext.jsx'
+import scheduleService from '../../../services/scheduleService'
+import { usePageTitle } from '../../../hooks/usePageTitle.js'
+import '../HistoryPage/History.css'
+
+const SchedulePage = () => {
+  usePageTitle('Lịch trình')
+  const { isAuthenticated } = useAuth()
+  const [tasks, setTasks] = useState([])
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'medication',
+    reminder_time: '08:00',
+    repeat_days: []
+  })
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadTasks()
+    }
+  }, [isAuthenticated, selectedDate])
+
+  const getDayOfWeek = (dateStr) => {
+    const date = new Date(dateStr)
+    const day = date.getDay() // 0 = Sunday, 1 = Monday, ...
+    return day === 0 ? 8 : day + 1 // Convert to DB format: 8 = Sunday, 2 = Monday, ...
+  }
+
+  const loadTasks = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const dayOfWeek = getDayOfWeek(selectedDate)
+      const data = await scheduleService.getDailyTasks(selectedDate, dayOfWeek)
+      setTasks(data || [])
+    } catch (err) {
+      console.error('Error loading tasks:', err)
+      setError('Lỗi khi tải lịch trình')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleToggleTask = async (scheduleId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === 'completed' ? 'pending' : 'completed'
+      await scheduleService.toggleTask(scheduleId, selectedDate, newStatus)
+      await loadTasks()
+    } catch (err) {
+      console.error('Error toggling task:', err)
+      setError('Lỗi khi cập nhật trạng thái')
+    }
+  }
+
+  const handleAddSchedule = async () => {
+    if (!formData.title || !formData.reminder_time) {
+      setError('Vui lòng nhập đầy đủ thông tin')
+      return
+    }
+
+    if (formData.repeat_days.length === 0) {
+      setError('Vui lòng chọn ít nhất một ngày lặp lại')
+      return
+    }
+
+    try {
+      setError('')
+      await scheduleService.create({
+        ...formData,
+        repeat_days: formData.repeat_days.join(',')
+      })
+      setShowAddForm(false)
+      setFormData({
+        title: '',
+        type: 'medication',
+        reminder_time: '08:00',
+        repeat_days: []
+      })
+      await loadTasks()
+    } catch (err) {
+      console.error('Error creating schedule:', err)
+      setError(err.response?.data?.message || 'Lỗi khi tạo lịch trình')
+    }
+  }
+
+  const handleDeleteSchedule = async (id) => {
+    if (!window.confirm('Bạn có chắc muốn xóa lịch trình này?')) {
+      return
+    }
+
+    try {
+      setError('')
+      await scheduleService.delete(id)
+      await loadTasks()
+    } catch (err) {
+      console.error('Error deleting schedule:', err)
+      setError('Lỗi khi xóa lịch trình')
+    }
+  }
+
+  const toggleRepeatDay = (day) => {
+    setFormData({
+      ...formData,
+      repeat_days: formData.repeat_days.includes(day)
+        ? formData.repeat_days.filter(d => d !== day)
+        : [...formData.repeat_days, day]
+    })
+  }
+
+  const dayLabels = {
+    2: 'Thứ 2',
+    3: 'Thứ 3',
+    4: 'Thứ 4',
+    5: 'Thứ 5',
+    6: 'Thứ 6',
+    7: 'Thứ 7',
+    8: 'Chủ nhật'
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="history-container">
+        <div className="history-card">
+          <h2>Yêu cầu đăng nhập</h2>
+          <p>Bạn cần đăng nhập để quản lý lịch trình.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="history-container">
+      <div className="history-card">
+        <div className="history-header">
+          <div>
+            <h1 className="history-title">Lịch trình</h1>
+            <p className="history-subtitle">Quản lý lịch trình nhắc nhở của bạn</p>
+          </div>
+          <button
+            className="history-new-btn"
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            {showAddForm ? 'Hủy' : 'Thêm lịch trình'}
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ background: '#fed7d7', color: '#c53030', padding: 12, borderRadius: 6, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {showAddForm && (
+          <div style={{ background: '#f9fafb', padding: 20, borderRadius: 8, marginBottom: 20, border: '1px solid #e5e7eb' }}>
+            <h3 style={{ marginTop: 0 }}>Thêm lịch trình mới</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Tiêu đề *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="VD: Uống thuốc, Tập thể dục..."
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Loại</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
+                >
+                  <option value="medication">Uống thuốc</option>
+                  <option value="exercise">Tập thể dục</option>
+                  <option value="appointment">Cuộc hẹn</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Giờ nhắc nhở *</label>
+                <input
+                  type="time"
+                  value={formData.reminder_time}
+                  onChange={(e) => setFormData({ ...formData, reminder_time: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Lặp lại vào các ngày *</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {Object.entries(dayLabels).map(([day, label]) => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleRepeatDay(day)}
+                      style={{
+                        padding: '8px 16px',
+                        border: `2px solid ${formData.repeat_days.includes(day) ? '#667eea' : '#e5e7eb'}`,
+                        borderRadius: 4,
+                        background: formData.repeat_days.includes(day) ? '#667eea' : 'white',
+                        color: formData.repeat_days.includes(day) ? 'white' : '#1a202c',
+                        cursor: 'pointer',
+                        fontWeight: formData.repeat_days.includes(day) ? 600 : 400
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleAddSchedule}
+                  disabled={loading}
+                >
+                  Thêm lịch trình
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setShowAddForm(false)
+                    setFormData({
+                      title: '',
+                      type: 'medication',
+                      reminder_time: '08:00',
+                      repeat_days: []
+                    })
+                    setError('')
+                  }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Chọn ngày xem lịch trình:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
+          />
+        </div>
+
+        {loading ? (
+          <div className="history-loading">
+            <div className="history-spinner"></div>
+            <p>Đang tải...</p>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="history-empty">
+            <p>Không có lịch trình nào cho ngày này.</p>
+            <p>Hãy thêm lịch trình mới để bắt đầu!</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tasks.map((task) => (
+              <div
+                key={task.schedule_id}
+                style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  padding: 16,
+                  background: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={task.log_status === 'completed'}
+                  onChange={() => handleToggleTask(task.schedule_id, task.log_status)}
+                  style={{ width: 20, height: 20, cursor: 'pointer' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 600 }}>
+                    {task.title}
+                  </h3>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 14, color: '#6b7280' }}>
+                    <span>Loại: {task.type === 'medication' ? 'Uống thuốc' : task.type === 'exercise' ? 'Tập thể dục' : task.type === 'appointment' ? 'Cuộc hẹn' : 'Khác'}</span>
+                    <span>Giờ: {task.reminder_time}</span>
+                    {task.log_status === 'completed' && task.completed_at && (
+                      <span>Hoàn thành: {new Date(task.completed_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteSchedule(task.schedule_id)}
+                  style={{
+                    padding: '6px 12px',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14
+                  }}
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default SchedulePage
+

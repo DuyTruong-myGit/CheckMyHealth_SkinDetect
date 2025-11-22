@@ -1,21 +1,35 @@
 import { Route, Routes } from 'react-router-dom'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import MainLayout from './layouts/MainLayout.jsx'
-import ProtectedRoute from './components/ProtectedRoute.jsx'
-import HomePage from './pages/HomePage.jsx'
-import LoginPage from './pages/LoginPage.jsx'
-import RegisterPage from './pages/RegisterPage.jsx'
-import ProfilePage from './pages/ProfilePage.jsx'
-import DiagnosisPage from './pages/DiagnosisPage.jsx'
-import HistoryPage from './pages/HistoryPage.jsx'
-import AdminDashboard from './pages/AdminDashboard.jsx'
-import AdminNews from './pages/AdminNews.jsx'
-import NewsPage from './pages/NewsPage.jsx'
-import AdminUsers from './pages/AdminUsers.jsx'
-import ComingSoon from './pages/ComingSoon.jsx'
-import AdminReports from './pages/AdminReports.jsx'
-import NotFound from './pages/NotFound.jsx'
-import ChatPage from './pages/ChatPage.jsx'
+import ProtectedRoute from './components/common/ProtectedRoute/ProtectedRoute.jsx'
+// Auth pages
+import LoginPage from './pages/auth/LoginPage/LoginPage.jsx'
+import RegisterPage from './pages/auth/RegisterPage/RegisterPage.jsx'
+
+// Public pages
+import HomePage from './pages/public/HomePage/HomePage.jsx'
+import NewsPage from './pages/public/NewsPage/NewsPage.jsx'
+import DiseasesPage from './pages/public/DiseasesPage/DiseasesPage.jsx'
+
+// User pages
+import DiagnosisPage from './pages/user/DiagnosisPage/DiagnosisPage.jsx'
+import HistoryPage from './pages/user/HistoryPage/HistoryPage.jsx'
+import ProfilePage from './pages/user/ProfilePage/ProfilePage.jsx'
+import ChatPage from './pages/user/ChatPage/ChatPage.jsx'
+import SchedulePage from './pages/user/SchedulePage/SchedulePage.jsx'
+import FeedbackPage from './pages/user/FeedbackPage/FeedbackPage.jsx'
+import MapPage from './pages/user/MapPage/MapPage.jsx'
+
+// Admin pages
+import AdminDashboard from './pages/admin/AdminDashboard/AdminDashboard.jsx'
+import AdminUsers from './pages/admin/AdminUsers/AdminUsers.jsx'
+import AdminDiseases from './pages/admin/AdminDiseases/AdminDiseases.jsx'
+import AdminNews from './pages/admin/AdminNews/AdminNews.jsx'
+import AdminReports from './pages/admin/AdminReports/AdminReports.jsx'
+
+// Common pages
+import NotFound from './pages/common/NotFound/NotFound.jsx'
+import ComingSoon from './pages/common/ComingSoon/ComingSoon.jsx'
 import './App.css'
 
 function App() {
@@ -58,6 +72,38 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route 
+          path="/diseases" 
+          element={
+            <ProtectedRoute>
+              <DiseasesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/schedule" 
+          element={
+            <ProtectedRoute>
+              <SchedulePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/feedback" 
+          element={
+            <ProtectedRoute>
+              <FeedbackPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/map" 
+          element={
+            <ProtectedRoute>
+              <MapPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
       <Route 
         path="/admin" 
@@ -71,6 +117,7 @@ function App() {
         <Route path="news" element={<AdminNews />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="reports" element={<AdminReports />} />
+        <Route path="diseases" element={<AdminDiseases />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

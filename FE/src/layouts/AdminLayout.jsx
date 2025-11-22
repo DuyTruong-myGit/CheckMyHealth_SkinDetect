@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
-import AdminSidebar from '../components/AdminSidebar.jsx'
-import SiteHeader from '../components/SiteHeader.jsx'
+import AdminSidebar from '../components/layout/AdminSidebar/AdminSidebar.jsx'
+import SiteHeader from '../components/layout/SiteHeader/SiteHeader.jsx'
 
 const AdminLayout = () => {
   return (
