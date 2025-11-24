@@ -82,7 +82,7 @@ const callAiApiReal = async (imageUrl) => {
         try {
             // Tìm trong bảng skin_diseases_info dựa trên disease_code
             const [rows] = await pool.query(
-'SELECT info_id, disease_name_vi, description FROM skin_diseases_info WHERE disease_code = ?', 
+                'SELECT info_id, disease_name_vi, description FROM skin_diseases_info WHERE disease_code = ?', 
                 [dbDiseaseCode]
             );
             
@@ -148,6 +148,24 @@ const diagnosisController = {
             const history = await diagnosisModel.findByUserId(userId);
             res.status(200).json(history);
         } catch (error) {
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+    deleteHistoryItem: async (req, res) => {
+        try {
+            const { id } = req.params; // Lấy history_id từ URL
+            const userId = req.user.userId; // Lấy user_id từ Token
+
+            const success = await diagnosisModel.deleteById(id, userId);
+
+            if (success) {
+                res.status(200).json({ message: 'Đã xóa kết quả chẩn đoán.' });
+            } else {
+                res.status(404).json({ message: 'Không tìm thấy bản ghi hoặc bạn không có quyền xóa.' });
+            }
+        } catch (error) {
+            console.error('Delete Error:', error);
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }

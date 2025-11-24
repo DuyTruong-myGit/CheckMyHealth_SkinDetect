@@ -47,8 +47,23 @@ const diagnosisModel = {
             console.error('Error counting diagnoses:', error);
             throw error;
         }
-    }
+    },
 
+    
+    deleteById: async (historyId, userId) => {
+        try {
+            // Chỉ xóa nếu history_id khớp VÀ user_id khớp (Bảo mật)
+            const [result] = await pool.query(
+                'DELETE FROM diagnosis_history WHERE history_id = ? AND user_id = ?',
+                [historyId, userId]
+            );
+            // result.affectedRows > 0 nghĩa là xóa thành công
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error deleting history:', error);
+            throw error;
+        }
+    }
 
 
 };

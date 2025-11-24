@@ -125,5 +125,6 @@ router.post(
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/history', authMiddleware, diagnosisController.getHistory);
+router.delete('/:id', authMiddleware, diagnosisController.deleteHistoryItem);
 
 module.exports = router;
