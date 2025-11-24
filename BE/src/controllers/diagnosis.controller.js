@@ -98,7 +98,7 @@ const callAiApiReal = async (imageUrl) => {
         return {
             success: true,
             is_valid_skin_image: true,
-            
+            image_url: imageUrl,
             disease_name: dbDiseaseCode,    // Tên tiếng Anh chuẩn DB
             disease_name_vi: diseaseNameVi, // Tên tiếng Việt
             info_id: infoId,                // ID quan trọng để bấm nút xem
