@@ -1,15 +1,16 @@
 import { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getUsers, createUser } from '../../../services/features/adminService.js'
 import { formatDateAndTime } from '../../../utils/format.js'
 import SortableTableHeader from '../../../components/ui/SortableTableHeader/SortableTableHeader.jsx'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import AddUserModal from '../../../components/features/admin/AddUserModal/AddUserModal.jsx'
-import UserHistoryModal from '../../../components/features/admin/UserHistoryModal/UserHistoryModal.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './AdminUsers.css'
 
 const AdminUsers = () => {
   usePageTitle('Quản lý người dùng')
+  const navigate = useNavigate()
   const [state, setState] = useState({ loading: true, data: [], error: null })
   const [searchTerm, setSearchTerm] = useState('')
   const [sortConfig, setSortConfig] = useState({ column: 'user_id', direction: 'asc' })
@@ -18,7 +19,6 @@ const AdminUsers = () => {
   const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [addUserLoading, setAddUserLoading] = useState(false)
-  const [historyModal, setHistoryModal] = useState({ isOpen: false, userId: null, userName: '' })
 
   // Fetch data
   useEffect(() => {
@@ -107,11 +107,7 @@ const AdminUsers = () => {
   }
 
   const handleViewHistory = (userId, userName) => {
-    setHistoryModal({ isOpen: true, userId, userName })
-  }
-
-  const handleCloseHistory = () => {
-    setHistoryModal({ isOpen: false, userId: null, userName: '' })
+    navigate(`/admin/users/${userId}/history`)
   }
 
   return (
@@ -251,13 +247,6 @@ const AdminUsers = () => {
         onClose={() => setShowAddModal(false)}
         onSubmit={handleAddUser}
         loading={addUserLoading}
-      />
-
-      <UserHistoryModal
-        isOpen={historyModal.isOpen}
-        onClose={handleCloseHistory}
-        userId={historyModal.userId}
-        userName={historyModal.userName}
       />
     </section>
   )

@@ -249,26 +249,48 @@
   font-size: 1rem;
 }
 
-.diagnosis-result-description,
-.diagnosis-result-recommendation {
+.diagnosis-result-description {
   padding: 1.5rem;
   background: #f7fafc;
   border-radius: 8px;
   border-left: 4px solid #667eea;
 }
 
-.diagnosis-result-description h3,
-.diagnosis-result-recommendation h3 {
+.diagnosis-result-description h3 {
   margin: 0 0 0.75rem 0;
   color: #1a202c;
   font-size: 1.1rem;
 }
 
-.diagnosis-result-description p,
-.diagnosis-result-recommendation p {
+.diagnosis-result-description p {
   margin: 0;
   color: #4a5568;
   line-height: 1.6;
+}
+
+.diagnosis-result-link {
+  padding: 1.5rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 4px solid #48bb78;
+}
+
+.diagnosis-detail-btn {
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.diagnosis-detail-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
 }
 
 .diagnosis-new-btn {

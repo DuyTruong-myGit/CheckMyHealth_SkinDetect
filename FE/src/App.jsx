@@ -5,6 +5,8 @@ import ProtectedRoute from './components/common/ProtectedRoute/ProtectedRoute.js
 // Auth pages
 import LoginPage from './pages/auth/LoginPage/LoginPage.jsx'
 import RegisterPage from './pages/auth/RegisterPage/RegisterPage.jsx'
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage/ForgotPasswordPage.jsx'
+import ResetPasswordPage from './pages/auth/ResetPasswordPage/ResetPasswordPage.jsx'
 
 // Public pages
 import HomePage from './pages/public/HomePage/HomePage.jsx'
@@ -28,6 +30,7 @@ import AdminDiseases from './pages/admin/AdminDiseases/AdminDiseases.jsx'
 import AdminNews from './pages/admin/AdminNews/AdminNews.jsx'
 import AdminReports from './pages/admin/AdminReports/AdminReports.jsx'
 import AdminFeedback from './pages/admin/AdminFeedback/AdminFeedback.jsx'
+import AdminUserHistoryPage from './pages/admin/AdminUserHistoryPage/AdminUserHistoryPage.jsx'
 
 // Common pages
 import NotFound from './pages/common/NotFound/NotFound.jsx'
@@ -41,6 +44,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route 
           path="/diagnosis" 
           element={
@@ -126,6 +131,7 @@ function App() {
         <Route index element={<AdminDashboard />} />
         <Route path="news" element={<AdminNews />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="users/:userId/history" element={<AdminUserHistoryPage />} />
         <Route path="feedback" element={<AdminFeedback />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="diseases" element={<AdminDiseases />} />

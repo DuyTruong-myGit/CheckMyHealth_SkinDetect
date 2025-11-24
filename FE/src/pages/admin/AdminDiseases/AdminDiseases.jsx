@@ -32,6 +32,10 @@ const AdminDiseases = () => {
   })
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
+  const [importFile, setImportFile] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importExportExpanded, setImportExportExpanded] = useState(false)
+  const [importResult, setImportResult] = useState(null)
 
   useEffect(() => {
     return () => {
@@ -225,6 +229,79 @@ const AdminDiseases = () => {
     }
   }
 
+  const handleExportAll = async (format = 'xlsx') => {
+    try {
+      setError('')
+      await diseaseService.exportAll(format)
+    } catch (err) {
+      setError(err.message || 'Lỗi khi export dữ liệu')
+    }
+  }
+
+  const handleExportSample = async (format = 'xlsx') => {
+    try {
+      setError('')
+      await diseaseService.exportSample(format)
+    } catch (err) {
+      setError(err.message || 'Lỗi khi export template')
+    }
+  }
+
+  const handleImportFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImportFile(file)
+      setError('')
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importFile) {
+      setError('Vui lòng chọn file để import')
+      return
+    }
+
+    try {
+      setImporting(true)
+      setError('')
+      setImportResult(null)
+      const result = await diseaseService.import(importFile)
+      setImportFile(null)
+      // Reset file input
+      const fileInput = document.getElementById('import-file-input')
+      if (fileInput) fileInput.value = ''
+      
+      // Luôn hiển thị kết quả, có thể có duplicates
+      if (result.duplicates && result.duplicates.length > 0) {
+        setImportResult({
+          type: 'duplicates',
+          duplicates: result.duplicates,
+          total: result.total,
+          duplicates_count: result.duplicates_count,
+          new_count: result.new_count,
+          imported: result.imported
+        })
+      } else {
+        setImportResult({
+          type: 'success',
+          imported: result.imported,
+          total: result.total
+        })
+      }
+      
+      // Reload danh sách nếu có import thành công
+      if (result.imported > 0) {
+        await loadDiseases()
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Lỗi khi import dữ liệu'
+      setError(errorMessage)
+      setImportResult(null)
+    } finally {
+      setImporting(false)
+    }
+  }
+
   return (
     <section className="admin-page">
       <header className="admin-page__header">
@@ -261,6 +338,119 @@ const AdminDiseases = () => {
       {error && (
         <div style={{ background: '#fed7d7', color: '#c53030', padding: 12, borderRadius: 6, marginBottom: 16 }}>
           {error}
+        </div>
+      )}
+
+      {!editMode && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ background: '#f7fafc', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+            <button
+              onClick={() => setImportExportExpanded(!importExportExpanded)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontWeight: 600,
+                color: '#4a5568',
+                fontSize: '0.95rem'
+              }}
+            >
+              <span>Import / Export</span>
+              <span style={{ fontSize: '0.8rem', transition: 'transform 0.2s', transform: importExportExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                ▼
+              </span>
+            </button>
+            {importExportExpanded && (
+              <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Export:</span>
+                  <button className="btn" onClick={() => handleExportAll('xlsx')} style={{ fontSize: '0.9rem' }}>
+                    Export Excel
+                  </button>
+                  <button className="btn" onClick={() => handleExportAll('csv')} style={{ fontSize: '0.9rem' }}>
+                    Export CSV
+                  </button>
+                  <span style={{ margin: '0 8px', color: '#cbd5e0' }}>|</span>
+                  <button className="btn" onClick={() => handleExportSample('xlsx')} style={{ fontSize: '0.9rem' }}>
+                    Template Excel
+                  </button>
+                  <button className="btn" onClick={() => handleExportSample('csv')} style={{ fontSize: '0.9rem' }}>
+                    Template CSV
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Import:</span>
+                  <input
+                    id="import-file-input"
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleImportFileChange}
+                    style={{ fontSize: '0.9rem' }}
+                  />
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleImport}
+                    disabled={!importFile || importing}
+                    style={{ fontSize: '0.9rem' }}
+                  >
+                    {importing ? 'Đang import...' : 'Import'}
+                  </button>
+                </div>
+                {importResult && (
+                  <div style={{ 
+                    padding: '12px', 
+                    borderRadius: 6, 
+                    background: importResult.type === 'duplicates' ? '#fff3cd' : '#d1e7dd',
+                    border: `1px solid ${importResult.type === 'duplicates' ? '#ffc107' : '#28a745'}`
+                  }}>
+                    {importResult.type === 'duplicates' ? (
+                      <div>
+                        <div style={{ fontWeight: 600, marginBottom: 8, color: '#856404' }}>
+                          {importResult.imported > 0 ? (
+                            <>✓ Đã import {importResult.imported} bệnh lý. Phát hiện {importResult.duplicates_count} bệnh trùng lặp:</>
+                          ) : (
+                            <>Phát hiện {importResult.duplicates_count} bệnh trùng lặp:</>
+                          )}
+                        </div>
+                        <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 8 }}>
+                          <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ background: '#f8f9fa' }}>
+                                <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Mã bệnh</th>
+                                <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Tên bệnh (Import)</th>
+                                <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Tên bệnh (Hiện có)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {importResult.duplicates.map((dup, idx) => (
+                                <tr key={idx}>
+                                  <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.disease_code}</td>
+                                  <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.disease_name_vi}</td>
+                                  <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.existing_name || 'N/A'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#856404' }}>
+                          Tổng: {importResult.total} | Trùng: {importResult.duplicates_count} | Đã import: {importResult.imported}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ color: '#155724', fontWeight: 500 }}>
+                        ✓ Import thành công {importResult.imported} bệnh lý (tổng {importResult.total} dòng)
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

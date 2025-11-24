@@ -23,14 +23,14 @@ const userModel = {
      * Tạo một user mới.
      * Dùng cho chức năng đăng ký.
      */
-    create: async (email, passwordHash, fullName) => {
+    create: async (email, passwordHash, fullName, avatarUrl = null) => {
         try {
-            const [result] = await db.query(
-            `INSERT INTO users (email, password_hash, full_name, avatar_url) 
-            VALUES (?, ?, ?, ?)`,
-            [email, password_hash, full_name, avatar_url]
-        );
-        return result.insertId;
+            const [result] = await pool.query(
+                `INSERT INTO users (email, password_hash, full_name, avatar_url) 
+                VALUES (?, ?, ?, ?)`,
+                [email, passwordHash, fullName, avatarUrl]
+            );
+            return result.insertId;
         } catch (error) {
             console.error('Error creating user:', error);
             throw error;

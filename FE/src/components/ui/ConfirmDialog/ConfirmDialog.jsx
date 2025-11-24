@@ -8,7 +8,8 @@ const ConfirmDialog = ({
   message = 'Bạn có chắc chắn muốn thực hiện hành động này?',
   confirmText = 'Xác nhận',
   cancelText = 'Hủy',
-  type = 'default' // 'default', 'danger', 'warning'
+  type = 'default', // 'default', 'danger', 'warning'
+  isConfirming = false // Disable confirm button when processing
 }) => {
   if (!isOpen) return null
 
@@ -31,6 +32,7 @@ const ConfirmDialog = ({
           <button 
             className={`confirm-dialog-btn confirm-dialog-btn--confirm confirm-dialog-btn--${type}`}
             onClick={onConfirm}
+            disabled={isConfirming}
           >
             {confirmText}
           </button>

@@ -1,3 +1,4 @@
+/* @refresh reset */
 import { createContext, useContext, useState, useEffect } from 'react'
 import { login as loginService, logout as logoutService, register as registerService, isAuthenticated, getToken } from '../services/auth/authService.js'
 import { getProfile } from '../services/features/profileService.js'

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
-import { getHistory } from '../../../services/features/diagnosisService.js'
+import { getHistory, deleteHistory } from '../../../services/features/diagnosisService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import './History.css'
 
 const HistoryPage = () => {
@@ -14,6 +15,9 @@ const HistoryPage = () => {
   const [error, setError] = useState('')
   const [expandedId, setExpandedId] = useState(null)
   const [sortBy, setSortBy] = useState('newest')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -65,6 +69,37 @@ const HistoryPage = () => {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  const handleDeleteClick = (e, item) => {
+    e.stopPropagation()
+    const itemId = item.diagnosis_id || item.history_id
+    if (itemId) {
+      setDeleteTarget(itemId)
+      setConfirmOpen(true)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    
+    try {
+      setDeleting(true)
+      setError('')
+      await deleteHistory(deleteTarget)
+      setConfirmOpen(false)
+      setDeleteTarget(null)
+      await loadHistory()
+    } catch (err) {
+      setError(err.message || 'Không thể xóa lịch sử chẩn đoán')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setConfirmOpen(false)
+    setDeleteTarget(null)
   }
 
   if (!isAuthenticated) {
@@ -134,63 +169,118 @@ const HistoryPage = () => {
             </div>
 
             <div className="history-list">
-              {getSortedHistory().map((item) => (
-                <div key={item.diagnosis_id} className="history-item">
-                  <div 
-                    className="history-item-header"
-                    onClick={() => setExpandedId(expandedId === item.diagnosis_id ? null : item.diagnosis_id)}
-                  >
-                    <div className="history-item-image">
-                      {item.image_url ? (
-                        <img src={item.image_url} alt="Diagnosis" />
-                      ) : (
-                        <div className="history-item-placeholder">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                          </svg>
+              {getSortedHistory().map((item, index) => {
+                const itemId = item.diagnosis_id || `history-${index}`
+                const isExpanded = expandedId === itemId
+                
+                return (
+                  <div key={itemId} className="history-item">
+                    <div 
+                      className="history-item-header"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedId(isExpanded ? null : itemId)
+                      }}
+                    >
+                      <div className="history-item-image">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt="Diagnosis" />
+                        ) : (
+                          <div className="history-item-placeholder">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="history-item-main">
+                        <h3>{getDiseaseName(item)}</h3>
+                        <div className="history-item-meta">
+                          <span className="history-item-date">
+                            {formatDate(getTimestamp(item))}
+                          </span>
+                          <span className="history-item-confidence">
+                            Độ tin cậy: {getConfidence(item)
+                              ? `${(getConfidence(item) * 100).toFixed(1)}%`
+                              : 'N/A'}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="history-item-main">
-                      <h3>{getDiseaseName(item)}</h3>
-                      <div className="history-item-meta">
-                        <span className="history-item-date">
-                          {formatDate(getTimestamp(item))}
-                        </span>
-                        <span className="history-item-confidence">
-                          Độ tin cậy: {getConfidence(item)
-                            ? `${(getConfidence(item) * 100).toFixed(1)}%`
-                            : 'N/A'}
-                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {!isExpanded && (
+                          <button
+                            className="history-item-delete"
+                            onClick={(e) => handleDeleteClick(e, item)}
+                            disabled={deleting}
+                            title="Xóa lịch sử này"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        )}
+                        <button 
+                          className="history-item-toggle"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExpandedId(isExpanded ? null : itemId)
+                          }}
+                        >
+                          {isExpanded ? '▼' : '▶'}
+                        </button>
                       </div>
                     </div>
-                    <button className="history-item-toggle">
-                      {expandedId === item.diagnosis_id ? '▼' : '▶'}
-                    </button>
-                  </div>
 
-                  {expandedId === item.diagnosis_id && (
-                    <div className="history-item-details">
-                      {item.result_json?.description && (
+                    {isExpanded && (
+                      <div className="history-item-details">
+                        {item.result_json?.description && (
+                          <div className="history-detail-section">
+                            <h4>Mô tả</h4>
+                            <p>{item.result_json.description}</p>
+                          </div>
+                        )}
+                        {item.result_json?.info_id && (
+                          <div className="history-detail-section">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/diseases/${item.result_json.info_id}`)
+                              }}
+                              className="history-detail-link"
+                            >
+                              Xem thông tin y khoa chi tiết
+                            </button>
+                          </div>
+                        )}
                         <div className="history-detail-section">
-                          <h4>Mô tả</h4>
-                          <p>{item.result_json.description}</p>
+                          <button
+                            onClick={(e) => handleDeleteClick(e, item)}
+                            className="history-delete-btn"
+                            disabled={deleting}
+                          >
+                            {deleting && deleteTarget === (item.diagnosis_id || item.history_id) ? 'Đang xóa...' : 'Xóa lịch sử này'}
+                          </button>
                         </div>
-                      )}
-                      {item.result_json?.recommendation && (
-                        <div className="history-detail-section">
-                          <h4>Khuyến nghị</h4>
-                          <p>{item.result_json.recommendation}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Xác nhận xóa"
+        message="Bạn có chắc chắn muốn xóa lịch sử chẩn đoán này? Hành động này không thể hoàn tác."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmButtonStyle={{ background: '#dc3545', color: 'white' }}
+      />
     </div>
   )
 }

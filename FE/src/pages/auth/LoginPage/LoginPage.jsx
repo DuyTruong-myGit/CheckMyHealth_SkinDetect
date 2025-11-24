@@ -75,6 +75,15 @@ const LoginPage = () => {
               required
               disabled={loading}
             />
+            <div style={{ textAlign: 'right', marginTop: '4px' }}>
+              <Link 
+                to="/forgot-password" 
+                className="auth-link"
+                style={{ fontSize: '0.875rem' }}
+              >
+                Quên mật khẩu?
+              </Link>
+            </div>
           </div>
 
           <button 

@@ -132,3 +132,22 @@ export const getHistory = async () => {
   }
 }
 
+/**
+ * Xóa một mục lịch sử chẩn đoán
+ * @param {number} historyId - ID của lịch sử chẩn đoán
+ * @returns {Promise<Object>} Kết quả xóa
+ */
+export const deleteHistory = async (historyId) => {
+  try {
+    const response = await apiClient(`/api/diagnose/${historyId}`, {
+      method: 'DELETE',
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('hết hạn')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể xóa lịch sử chẩn đoán')
+  }
+}
+

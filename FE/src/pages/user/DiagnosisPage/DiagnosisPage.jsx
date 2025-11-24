@@ -235,10 +235,14 @@ const DiagnosisPage = () => {
                 </div>
               )}
 
-              {result.recommendation && (
-                <div className="diagnosis-result-recommendation">
-                  <h3>Khuyến nghị:</h3>
-                  <p>{result.recommendation}</p>
+              {result.info_id && (
+                <div className="diagnosis-result-link">
+                  <button
+                    onClick={() => navigate(`/diseases/${result.info_id}`)}
+                    className="diagnosis-detail-btn"
+                  >
+                    Xem thông tin y khoa chi tiết
+                  </button>
                 </div>
               )}
 

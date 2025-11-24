@@ -68,7 +68,7 @@ export const requestPasswordReset = async () => {
 }
 
 /**
- * Đặt lại mật khẩu bằng mã OTP
+ * Đặt lại mật khẩu bằng mã OTP (khi đã đăng nhập)
  * @param {Object} data - Dữ liệu đặt lại mật khẩu
  * @param {string} data.code - Mã OTP 6 số
  * @param {string} data.newPassword - Mật khẩu mới
@@ -77,6 +77,43 @@ export const requestPasswordReset = async () => {
 export const resetPasswordWithCode = async (data) => {
   try {
     const response = await apiClient('/api/auth/reset-password-with-code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    return response
+  } catch (error) {
+    throw new Error(error.message || 'Đặt lại mật khẩu thất bại')
+  }
+}
+
+/**
+ * Yêu cầu đặt lại mật khẩu khi quên (public, chưa đăng nhập)
+ * @param {string} email - Email của tài khoản
+ * @returns {Promise<Object>} Kết quả
+ */
+export const publicForgotPassword = async (email) => {
+  try {
+    const response = await apiClient('/api/auth/public-forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+    return response
+  } catch (error) {
+    throw new Error(error.message || 'Không thể gửi mã xác nhận')
+  }
+}
+
+/**
+ * Đặt lại mật khẩu bằng mã OTP khi quên (public, chưa đăng nhập)
+ * @param {Object} data - Dữ liệu đặt lại mật khẩu
+ * @param {string} data.email - Email của tài khoản
+ * @param {string} data.code - Mã OTP 6 số
+ * @param {string} data.newPassword - Mật khẩu mới
+ * @returns {Promise<Object>} Kết quả
+ */
+export const publicResetPassword = async (data) => {
+  try {
+    const response = await apiClient('/api/auth/public-reset-password', {
       method: 'POST',
       body: JSON.stringify(data),
     })

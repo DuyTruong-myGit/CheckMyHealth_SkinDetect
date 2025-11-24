@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { updateProfile, updateAvatar } from '../../../services/features/profileService.js'
+import { requestPasswordReset, resetPasswordWithCode } from '../../../services/auth/authService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './Profile.css'
 
@@ -15,6 +16,14 @@ const ProfilePage = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [avatarUploading, setAvatarUploading] = useState(false)
+  
+  // Password change states
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [passwordCode, setPasswordCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [codeSent, setCodeSent] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -73,6 +82,67 @@ const ProfilePage = () => {
       setAvatarUploading(false)
       // reset input để có thể chọn lại cùng một file nếu cần
       e.target.value = ''
+    }
+  }
+
+  const handleRequestPasswordCode = async () => {
+    setError('')
+    setSuccess('')
+    setPasswordLoading(true)
+
+    try {
+      await requestPasswordReset()
+      setCodeSent(true)
+      setSuccess('Mã xác nhận đã được gửi đến email của bạn!')
+    } catch (err) {
+      setError(err.message || 'Không thể gửi mã xác nhận')
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (!passwordCode || !newPassword || !confirmPassword) {
+      setError('Vui lòng điền đầy đủ thông tin')
+      return
+    }
+
+    if (passwordCode.length !== 6) {
+      setError('Mã xác nhận phải có 6 số')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp')
+      return
+    }
+
+    setPasswordLoading(true)
+
+    try {
+      await resetPasswordWithCode({
+        code: passwordCode,
+        newPassword
+      })
+      setSuccess('Đổi mật khẩu thành công!')
+      setShowPasswordChange(false)
+      setPasswordCode('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setCodeSent(false)
+    } catch (err) {
+      setError(err.message || 'Đổi mật khẩu thất bại')
+    } finally {
+      setPasswordLoading(false)
     }
   }
 
@@ -171,6 +241,117 @@ const ProfilePage = () => {
             {loading ? 'Đang cập nhật...' : 'Cập nhật hồ sơ'}
           </button>
         </form>
+
+        {user.provider === 'local' && (
+          <div className="profile-password-section" style={{ 
+            marginTop: '2rem', 
+            paddingTop: '2rem', 
+            borderTop: '1px solid #e5e7eb' 
+          }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Đổi mật khẩu</h2>
+            
+            {!showPasswordChange ? (
+              <button
+                type="button"
+                className="profile-button"
+                style={{ background: '#6b7280' }}
+                onClick={() => setShowPasswordChange(true)}
+              >
+                Đổi mật khẩu
+              </button>
+            ) : (
+              <form onSubmit={handleChangePassword} className="profile-form">
+                {!codeSent ? (
+                  <>
+                    <p style={{ marginBottom: '1rem', color: '#6b7280' }}>
+                      Nhấn nút bên dưới để nhận mã xác nhận qua email
+                    </p>
+                    <button
+                      type="button"
+                      className="profile-button"
+                      onClick={handleRequestPasswordCode}
+                      disabled={passwordLoading}
+                    >
+                      {passwordLoading ? 'Đang gửi...' : 'Gửi mã xác nhận'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="profile-form-group">
+                      <label htmlFor="passwordCode">Mã xác nhận (6 số)</label>
+                      <input
+                        type="text"
+                        id="passwordCode"
+                        value={passwordCode}
+                        onChange={(e) => setPasswordCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="123456"
+                        maxLength={6}
+                        required
+                        disabled={passwordLoading}
+                        style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '18px' }}
+                      />
+                    </div>
+
+                    <div className="profile-form-group">
+                      <label htmlFor="newPassword">Mật khẩu mới</label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        disabled={passwordLoading}
+                        minLength={6}
+                      />
+                    </div>
+
+                    <div className="profile-form-group">
+                      <label htmlFor="confirmPassword">Xác nhận mật khẩu</label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        disabled={passwordLoading}
+                        minLength={6}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button
+                        type="submit"
+                        className="profile-button"
+                        disabled={passwordLoading}
+                      >
+                        {passwordLoading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                      </button>
+                      <button
+                        type="button"
+                        className="profile-button"
+                        style={{ background: '#6b7280' }}
+                        onClick={() => {
+                          setShowPasswordChange(false)
+                          setPasswordCode('')
+                          setNewPassword('')
+                          setConfirmPassword('')
+                          setCodeSent(false)
+                          setError('')
+                          setSuccess('')
+                        }}
+                        disabled={passwordLoading}
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </>
+                )}
+              </form>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

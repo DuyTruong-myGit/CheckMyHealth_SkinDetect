@@ -88,6 +88,124 @@ const diseaseService = {
       console.error('Error deleting disease:', error);
       throw error;
     }
+  },
+
+  /**
+   * Export tất cả bệnh lý (Admin only)
+   * @param {string} format - 'xlsx' hoặc 'csv'
+   */
+  exportAll: async (format = 'xlsx') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Bạn cần đăng nhập để sử dụng tính năng này');
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE_URL}/api/diseases/export/all?format=${format}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Lỗi export' }));
+        throw new Error(errorData.message || 'Lỗi export');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `diseases_export_${Date.now()}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error exporting diseases:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Export sample template (Admin only)
+   * @param {string} format - 'xlsx' hoặc 'csv'
+   */
+  exportSample: async (format = 'xlsx') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Bạn cần đăng nhập để sử dụng tính năng này');
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE_URL}/api/diseases/export/sample?format=${format}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Lỗi export template' }));
+        throw new Error(errorData.message || 'Lỗi export template');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `diseases_template.${format === 'csv' ? 'csv' : 'xlsx'}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error exporting sample:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Import bệnh lý từ file (Admin only)
+   * @param {File} file - File Excel hoặc CSV
+   */
+  import: async (file) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Bạn cần đăng nhập để sử dụng tính năng này');
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE_URL}/api/diseases/import`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Lỗi import' }));
+        throw new Error(errorData.message || errorData.errors?.join(', ') || 'Lỗi import');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error importing diseases:', error);
+      throw error;
+    }
   }
 };
 
