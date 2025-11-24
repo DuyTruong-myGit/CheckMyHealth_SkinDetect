@@ -150,6 +150,24 @@ const diagnosisController = {
         } catch (error) {
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
+    },
+
+    deleteHistoryItem: async (req, res) => {
+        try {
+            const { id } = req.params; // Lấy history_id từ URL
+            const userId = req.user.userId; // Lấy user_id từ Token
+
+            const success = await diagnosisModel.deleteById(id, userId);
+
+            if (success) {
+                res.status(200).json({ message: 'Đã xóa kết quả chẩn đoán.' });
+            } else {
+                res.status(404).json({ message: 'Không tìm thấy bản ghi hoặc bạn không có quyền xóa.' });
+            }
+        } catch (error) {
+            console.error('Delete Error:', error);
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
     }
 };
 
