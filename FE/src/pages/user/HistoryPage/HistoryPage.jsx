@@ -7,7 +7,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.js
 import './History.css'
 
 const HistoryPage = () => {
-  usePageTitle('Lịch sử chẩn đoán')
+  usePageTitle('Lịch sử chuẩn đoán')
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [history, setHistory] = useState([])
@@ -32,7 +32,7 @@ const HistoryPage = () => {
       const data = await getHistory()
       setHistory(data)
     } catch (err) {
-      setError(err.message || 'Không thể tải lịch sử chẩn đoán')
+      setError(err.message || 'Không thể tải lịch sử chuẩn đoán')
     } finally {
       setLoading(false)
     }
@@ -91,7 +91,7 @@ const HistoryPage = () => {
       setDeleteTarget(null)
       await loadHistory()
     } catch (err) {
-      setError(err.message || 'Không thể xóa lịch sử chẩn đoán')
+      setError(err.message || 'Không thể xóa lịch sử chuẩn đoán')
     } finally {
       setDeleting(false)
     }
@@ -107,7 +107,7 @@ const HistoryPage = () => {
       <div className="history-container">
         <div className="history-card">
           <h2>Yêu cầu đăng nhập</h2>
-          <p>Bạn cần đăng nhập để xem lịch sử chẩn đoán.</p>
+          <p>Bạn cần đăng nhập để xem lịch sử chuẩn đoán.</p>
         </div>
       </div>
     )
@@ -118,14 +118,14 @@ const HistoryPage = () => {
       <div className="history-card">
         <div className="history-header">
           <div>
-            <h1 className="history-title">Lịch sử chẩn đoán</h1>
-            <p className="history-subtitle">Xem lại các lần chẩn đoán trước đây của bạn</p>
+            <h1 className="history-title">Lịch sử chuẩn đoán</h1>
+            <p className="history-subtitle">Xem lại các lần chuẩn đoán trước đây của bạn</p>
           </div>
           <button 
             className="history-new-btn"
             onClick={() => navigate('/diagnosis')}
           >
-            Chẩn đoán mới
+              Chuẩn đoán mới
           </button>
         </div>
 
@@ -145,13 +145,13 @@ const HistoryPage = () => {
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
             </svg>
-            <p>Bạn chưa có lịch sử chẩn đoán nào.</p>
-            <p>Hãy thử chẩn đoán ảnh đầu tiên của bạn!</p>
+            <p>Bạn chưa có lịch sử chuẩn đoán nào.</p>
+            <p>Hãy thử chuẩn đoán ảnh đầu tiên của bạn!</p>
             <button 
               className="history-start-btn"
               onClick={() => navigate('/diagnosis')}
             >
-              Bắt đầu chẩn đoán
+              Bắt đầu chuẩn đoán
             </button>
           </div>
         ) : (
@@ -274,7 +274,7 @@ const HistoryPage = () => {
       <ConfirmDialog
         open={confirmOpen}
         title="Xác nhận xóa"
-        message="Bạn có chắc chắn muốn xóa lịch sử chẩn đoán này? Hành động này không thể hoàn tác."
+        message="Bạn có chắc chắn muốn xóa lịch sử chuẩn đoán này? Hành động này không thể hoàn tác."
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
         confirmText="Xóa"

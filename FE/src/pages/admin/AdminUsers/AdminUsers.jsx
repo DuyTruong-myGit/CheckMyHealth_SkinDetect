@@ -215,7 +215,7 @@ const AdminUsers = () => {
                         <button
                           className="btn-action"
                           onClick={() => handleViewHistory(user.user_id, user.full_name || user.email)}
-                          title="Xem lịch sử chẩn đoán"
+                          title="Xem lịch sử chuẩn đoán"
                         >
                           📋 Xem
                         </button>

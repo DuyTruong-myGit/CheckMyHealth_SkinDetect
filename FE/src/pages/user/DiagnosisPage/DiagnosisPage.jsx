@@ -6,7 +6,7 @@ import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import './Diagnosis.css'
 
 const DiagnosisPage = () => {
-  usePageTitle('Chẩn đoán')
+  usePageTitle('Chuẩn đoán')
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [selectedFile, setSelectedFile] = useState(null)
@@ -75,7 +75,7 @@ const DiagnosisPage = () => {
     e.preventDefault()
     
     if (!selectedFile) {
-      setError('Vui lòng chọn ảnh cần chẩn đoán')
+      setError('Vui lòng chọn ảnh cần chuẩn đoán')
       return
     }
 
@@ -90,7 +90,7 @@ const DiagnosisPage = () => {
       console.log('Diagnosis result:', diagnosisResult)
       setResult(diagnosisResult)
     } catch (err) {
-      const errorMsg = err?.message || err?.toString?.() || 'Chẩn đoán thất bại. Vui lòng thử lại.'
+      const errorMsg = err?.message || err?.toString?.() || 'Chuẩn đoán thất bại. Vui lòng thử lại.'
       console.error('Diagnosis failed:', errorMsg)
       setError(errorMsg)
       setErrorRecommendation(err?.recommendation || '')
@@ -116,7 +116,7 @@ const DiagnosisPage = () => {
       <div className="diagnosis-container">
         <div className="diagnosis-card">
           <h2>Yêu cầu đăng nhập</h2>
-          <p>Bạn cần đăng nhập để sử dụng tính năng chẩn đoán.</p>
+          <p>Bạn cần đăng nhập để sử dụng tính năng chuẩn đoán.</p>
         </div>
       </div>
     )
@@ -125,9 +125,9 @@ const DiagnosisPage = () => {
   return (
     <div className="diagnosis-container">
       <div className="diagnosis-card">
-        <h1 className="diagnosis-title">Chẩn đoán bệnh da</h1>
+        <h1 className="diagnosis-title">Chuẩn đoán bệnh da</h1>
         <p className="diagnosis-subtitle">
-          Tải lên hình ảnh vùng da cần kiểm tra để nhận kết quả chẩn đoán nhanh chóng
+          Tải lên hình ảnh vùng da cần kiểm tra để nhận kết quả chuẩn đoán nhanh chóng
         </p>
 
         {error && (
@@ -191,16 +191,16 @@ const DiagnosisPage = () => {
               {loading ? (
                 <>
                   <span className="diagnosis-spinner"></span>
-                  Đang chẩn đoán...
+                  Đang chuẩn đoán...
                 </>
               ) : (
-                'Bắt đầu chẩn đoán'
+                'Bắt đầu chuẩn đoán'
               )}
             </button>
           </form>
         ) : (
           <div className="diagnosis-result">
-            <h2>Kết quả chẩn đoán</h2>
+            <h2>Kết quả chuẩn đoán</h2>
             
             {result.image_url && (
               <div className="diagnosis-result-image">
@@ -251,7 +251,7 @@ const DiagnosisPage = () => {
                   onClick={handleReset}
                   className="diagnosis-new-btn"
                 >
-                  Chẩn đoán ảnh khác
+                  Chuẩn đoán ảnh khác
                 </button>
                 <button 
                   onClick={handleViewHistory}

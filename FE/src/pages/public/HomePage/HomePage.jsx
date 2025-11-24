@@ -17,14 +17,14 @@ const HomePage = () => {
             <span className="home-hero__subtitle">Nền tảng kiểm tra sức khỏe</span>
           </h1>
           <p className="home-hero__description">
-            Chẩn đoán bệnh da liễu nhanh chóng và chính xác với công nghệ AI tiên tiến. 
-            Tải lên hình ảnh và nhận kết quả chẩn đoán trong vài giây.
+            Chuẩn đoán bệnh da liễu nhanh chóng và chính xác với công nghệ AI tiên tiến. 
+            Tải lên hình ảnh và nhận kết quả chuẩn đoán trong vài giây.
           </p>
           <div className="home-hero__actions">
             {isAuthenticated ? (
               <>
                 <Link to="/diagnosis" className="btn btn-primary">
-                  Bắt đầu chẩn đoán
+                  Bắt đầu chuẩn đoán
                 </Link>
                 <Link to="/history" className="btn btn-secondary">
                   Xem lịch sử
@@ -59,13 +59,13 @@ const HomePage = () => {
         <div className="home-features__grid">
           <div className="home-feature-card">
             <div className="home-feature-icon">🔍</div>
-            <h3>Chẩn đoán nhanh chóng</h3>
-            <p>Nhận kết quả chẩn đoán trong vài giây với độ chính xác cao</p>
+            <h3>Chuẩn đoán nhanh chóng</h3>
+            <p>Nhận kết quả chuẩn đoán trong vài giây với độ chính xác cao</p>
           </div>
           <div className="home-feature-card">
             <div className="home-feature-icon">📊</div>
             <h3>Lịch sử đầy đủ</h3>
-            <p>Lưu trữ và xem lại tất cả các lần chẩn đoán của bạn</p>
+            <p>Lưu trữ và xem lại tất cả các lần chuẩn đoán của bạn</p>
           </div>
           <div className="home-feature-card">
             <div className="home-feature-icon">🔒</div>
@@ -75,7 +75,7 @@ const HomePage = () => {
           <div className="home-feature-card">
             <div className="home-feature-icon">💡</div>
             <h3>Khuyến nghị hữu ích</h3>
-            <p>Nhận các gợi ý và khuyến nghị dựa trên kết quả chẩn đoán</p>
+            <p>Nhận các gợi ý và khuyến nghị dựa trên kết quả chuẩn đoán</p>
           </div>
         </div>
       </section>
@@ -97,7 +97,7 @@ const HomePage = () => {
           <div className="home-step">
             <div className="home-step-number">3</div>
             <h3>Nhận kết quả</h3>
-            <p>Xem kết quả chẩn đoán cùng với các khuyến nghị</p>
+            <p>Xem kết quả chuẩn đoán cùng với các khuyến nghị</p>
           </div>
         </div>
       </section>
@@ -106,7 +106,7 @@ const HomePage = () => {
       {!isAuthenticated && (
         <section className="home-cta">
           <h2>Sẵn sàng bắt đầu?</h2>
-          <p>Đăng ký ngay để trải nghiệm dịch vụ chẩn đoán miễn phí</p>
+          <p>Đăng ký ngay để trải nghiệm dịch vụ chuẩn đoán miễn phí</p>
           <Link to="/register" className="btn btn-primary btn-large">
             Đăng ký miễn phí
           </Link>

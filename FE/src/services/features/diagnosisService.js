@@ -1,9 +1,10 @@
 import { apiClient } from '../api/apiClient.js'
+import { API_BASE_URL } from '../../config/api.js'
 
 /**
- * Chẩn đoán bệnh da qua hình ảnh
- * @param {File} imageFile - File ảnh cần chẩn đoán
- * @returns {Promise<Object>} Kết quả chẩn đoán
+ * Chuẩn đoán bệnh da qua hình ảnh
+ * @param {File} imageFile - File ảnh cần chuẩn đoán
+ * @returns {Promise<Object>} Kết quả chuẩn đoán
  */
 export const diagnose = async (imageFile) => {
   try {
@@ -16,11 +17,9 @@ export const diagnose = async (imageFile) => {
     if (!token) {
       throw new Error('Bạn cần đăng nhập để sử dụng tính năng này')
     }
-
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
     
     // Gọi API với FormData (không set Content-Type, browser sẽ tự set với boundary)
-    const response = await fetch(`${apiBaseUrl}/api/diagnose`, {
+    const response = await fetch(`${API_BASE_URL}/api/diagnose`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -83,13 +82,13 @@ export const diagnose = async (imageFile) => {
       throw error
     }
     
-    throw new Error(error?.message || error?.toString?.() || 'Chẩn đoán thất bại. Vui lòng thử lại.')
+    throw new Error(error?.message || error?.toString?.() || 'Chuẩn đoán thất bại. Vui lòng thử lại.')
   }
 }
 
 /**
- * Lấy lịch sử chẩn đoán của người dùng
- * @returns {Promise<Array>} Danh sách lịch sử chẩn đoán
+ * Lấy lịch sử chuẩn đoán của người dùng
+ * @returns {Promise<Array>} Danh sách lịch sử chuẩn đoán
  */
 export const getHistory = async () => {
   try {
@@ -128,13 +127,13 @@ export const getHistory = async () => {
     if (error.message.includes('401') || error.message.includes('hết hạn')) {
       throw error
     }
-    throw new Error(error.message || 'Không thể lấy lịch sử chẩn đoán')
+    throw new Error(error.message || 'Không thể lấy lịch sử chuẩn đoán')
   }
 }
 
 /**
- * Xóa một mục lịch sử chẩn đoán
- * @param {number} historyId - ID của lịch sử chẩn đoán
+ * Xóa một mục lịch sử chuẩn đoán
+ * @param {number} historyId - ID của lịch sử chuẩn đoán
  * @returns {Promise<Object>} Kết quả xóa
  */
 export const deleteHistory = async (historyId) => {
@@ -147,7 +146,7 @@ export const deleteHistory = async (historyId) => {
     if (error.message.includes('401') || error.message.includes('hết hạn')) {
       throw error
     }
-    throw new Error(error.message || 'Không thể xóa lịch sử chẩn đoán')
+    throw new Error(error.message || 'Không thể xóa lịch sử chuẩn đoán')
   }
 }
 

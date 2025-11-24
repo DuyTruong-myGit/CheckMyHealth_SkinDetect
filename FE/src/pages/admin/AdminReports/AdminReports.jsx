@@ -106,13 +106,13 @@ const AdminReports = () => {
 
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <StatCard title="Tổng số người dùng" value={stats.totalUsers} />
-        <StatCard title="Tổng số lượt chẩn đoán" value={stats.totalDiagnoses} />
+        <StatCard title="Tổng số lượt chuẩn đoán" value={stats.totalDiagnoses} />
       </div>
 
       <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16 }}>
         <div style={{ background: 'white', padding: 12, borderRadius: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>Lượt chẩn đoán theo ngày (chuỗi thời gian)</h3>
+            <h3 style={{ margin: 0 }}>Lượt chuẩn đoán theo ngày (chuỗi thời gian)</h3>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input type="number" min="7" max="365" value={period} onChange={(e) => setPeriod(Number(e.target.value))} style={{ width: 80, padding: 6 }} />
               <button className="btn" onClick={() => loadTimeseries(period)} disabled={loadingMore}>{loadingMore ? 'Đang...' : 'Lấy'}</button>

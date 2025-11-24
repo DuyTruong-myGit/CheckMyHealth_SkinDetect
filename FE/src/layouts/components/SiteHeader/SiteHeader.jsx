@@ -124,7 +124,7 @@ const SiteHeader = ({ variant = 'site' }) => {
                       className={buildLinkClass}
                       onClick={() => setServicesMenuOpen(false)}
                     >
-                      Chẩn đoán
+                      Chuẩn đoán
                     </NavLink>
                     <NavLink
                       to="/diseases"

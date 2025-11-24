@@ -170,9 +170,9 @@ export const deleteUser = async (userId) => {
 }
 
 /**
- * Lấy lịch sử chẩn đoán của một người dùng (Admin only)
+ * Lấy lịch sử chuẩn đoán của một người dùng (Admin only)
  * @param {number} userId - ID người dùng
- * @returns {Promise<Array>} Danh sách lịch sử chẩn đoán
+ * @returns {Promise<Array>} Danh sách lịch sử chuẩn đoán
  */
 export const getHistoryForUser = async (userId) => {
   try {
@@ -184,7 +184,7 @@ export const getHistoryForUser = async (userId) => {
     if (error.message.includes('401') || error.message.includes('403')) {
       throw error
     }
-    throw new Error(error.message || 'Không thể lấy lịch sử chẩn đoán')
+    throw new Error(error.message || 'Không thể lấy lịch sử chuẩn đoán')
   }
 }
 

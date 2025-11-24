@@ -56,7 +56,7 @@ const UserHistoryModal = ({ isOpen, onClose, userId, userName }) => {
       })
       setHistoryData(normalized)
     } catch (err) {
-      setError(err.message || 'Không thể tải lịch sử chẩn đoán')
+      setError(err.message || 'Không thể tải lịch sử chuẩn đoán')
     } finally {
       setLoading(false)
     }
@@ -103,7 +103,7 @@ const UserHistoryModal = ({ isOpen, onClose, userId, userName }) => {
       setDeleteTarget(null)
       await fetchHistory()
     } catch (err) {
-      setError(err.message || 'Không thể xóa lịch sử chẩn đoán')
+      setError(err.message || 'Không thể xóa lịch sử chuẩn đoán')
     } finally {
       setDeleting(false)
     }
@@ -120,7 +120,7 @@ const UserHistoryModal = ({ isOpen, onClose, userId, userName }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content user-history-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Lịch sử chẩn đoán - {userName}</h2>
+          <h2>Lịch sử chuẩn đoán - {userName}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
@@ -130,7 +130,7 @@ const UserHistoryModal = ({ isOpen, onClose, userId, userName }) => {
           {error && <p className="error-text">Lỗi: {error}</p>}
 
           {!loading && !error && historyData.length === 0 && (
-            <p className="empty-text">Chưa có lịch sử chẩn đoán nào.</p>
+            <p className="empty-text">Chưa có lịch sử chuẩn đoán nào.</p>
           )}
 
           {!loading && !error && historyData.length > 0 && (
@@ -341,7 +341,7 @@ const UserHistoryModal = ({ isOpen, onClose, userId, userName }) => {
       <ConfirmDialog
         open={confirmOpen}
         title="Xác nhận xóa"
-        message="Bạn có chắc chắn muốn xóa lịch sử chẩn đoán này? Hành động này không thể hoàn tác."
+        message="Bạn có chắc chắn muốn xóa lịch sử chuẩn đoán này? Hành động này không thể hoàn tác."
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
         confirmText="Xóa"
