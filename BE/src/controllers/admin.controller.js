@@ -596,7 +596,6 @@ const adminController = {
                 query = `SELECT 
                     YEAR(created_at) as year,
                     WEEK(created_at) as week,
-                    CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at), 2, '0')) as label,
                     COUNT(*) as count
                 FROM users
                 WHERE role = 'user'
