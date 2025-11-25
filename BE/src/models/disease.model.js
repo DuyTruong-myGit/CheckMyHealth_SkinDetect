@@ -1,15 +1,16 @@
 const { pool } = require('../config/db');
 
 const diseaseModel = {
-    // Lấy danh sách (có tìm kiếm)
+    // Láy danh sách (có tìm kiếm THEO TÊN HOẶC TRIỆU CHỨNG)
     getAll: async (search = '') => {
         try {
-            let query = 'SELECT info_id, disease_code, disease_name_vi, image_url FROM skin_diseases_info';
+            let query = 'SELECT info_id, disease_code, disease_name_vi, image_url, symptoms FROM skin_diseases_info';
             let params = [];
 
             if (search) {
-                query += ' WHERE disease_name_vi LIKE ? OR disease_code LIKE ?';
-                params.push(`%${search}%`, `%${search}%`);
+                // Tìm kiếm theo tên bệnh, mã bệnh HOẶC triệu chứng
+                query += ' WHERE disease_name_vi LIKE ? OR disease_code LIKE ? OR symptoms LIKE ?';
+                params.push(`%${search}%`, `%${search}%`, `%${search}%`);
             }
             
             query += ' ORDER BY disease_name_vi ASC';
@@ -148,7 +149,6 @@ const diseaseModel = {
         try {
             if (diseases.length === 0) return 0;
             
-            // Tạo placeholders cho nhiều rows
             const placeholders = diseases.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
             const sql = `
                 INSERT INTO skin_diseases_info 
@@ -157,7 +157,6 @@ const diseaseModel = {
                 VALUES ${placeholders}
             `;
             
-            // Flatten values array
             const values = diseases.flatMap(d => [
                 d.disease_code || null,
                 d.disease_name_vi || null,
