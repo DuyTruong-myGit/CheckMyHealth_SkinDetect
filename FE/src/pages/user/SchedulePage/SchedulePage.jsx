@@ -315,6 +315,8 @@ const SchedulePage = () => {
                   style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
                 >
                   <option value="medication">Uống thuốc</option>
+                  <option value="skincare">Chăm sóc da</option>
+                  <option value="checkup">Khám sức khỏe</option>
                   <option value="exercise">Tập thể dục</option>
                   <option value="appointment">Cuộc hẹn</option>
                   <option value="other">Khác</option>
@@ -459,7 +461,14 @@ const SchedulePage = () => {
                     {task.title}
                   </h3>
                   <div style={{ display: 'flex', gap: 16, fontSize: 14, color: '#6b7280' }}>
-                    <span>Loại: {task.type === 'medication' ? 'Uống thuốc' : task.type === 'exercise' ? 'Tập thể dục' : task.type === 'appointment' ? 'Cuộc hẹn' : 'Khác'}</span>
+                    <span>Loại: {
+                      task.type === 'medication' ? 'Uống thuốc' :
+                      task.type === 'skincare' ? 'Chăm sóc da' :
+                      task.type === 'checkup' ? 'Khám sức khỏe' :
+                      task.type === 'exercise' ? 'Tập thể dục' :
+                      task.type === 'appointment' ? 'Cuộc hẹn' :
+                      'Khác'
+                    }</span>
                     <span>Giờ: {task.reminder_time}</span>
                     {task.log_status === 'completed' && task.completed_at && (
                       <span>Hoàn thành: {new Date(task.completed_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>

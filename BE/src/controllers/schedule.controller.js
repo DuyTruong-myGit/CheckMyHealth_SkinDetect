@@ -13,12 +13,11 @@ const scheduleController = {
             }
 
             // Validate và normalize type
-            // Các giá trị hợp lệ có thể là: 'medication', 'exercise', 'other'
-            // Nếu database không hỗ trợ 'appointment', map thành 'other'
-            // Hoặc có thể database chỉ hỗ trợ 3 giá trị: medication, exercise, other
-            const validTypes = ['medication', 'exercise', 'other'];
-            // Map 'appointment' và các giá trị không hợp lệ khác thành 'other'
-            const normalizedType = validTypes.includes(type) ? type : 'other';
+            // Các giá trị hợp lệ theo database schema:
+            // 'medication', 'skincare', 'checkup', 'other', 'exercise', 'appointment'
+            const validTypes = ['medication', 'skincare', 'checkup', 'other', 'exercise', 'appointment'];
+            // Nếu type không hợp lệ, mặc định là 'medication'
+            const normalizedType = validTypes.includes(type) ? type : 'medication';
 
             const id = await scheduleModel.create(req.user.userId, { 
                 title, 
@@ -40,8 +39,11 @@ const scheduleController = {
             const { title, type, reminder_time, repeat_days, specific_date } = req.body;
             
             // Validate và normalize type
-            const validTypes = ['medication', 'exercise', 'other'];
-            const normalizedType = validTypes.includes(type) ? type : 'other';
+            // Các giá trị hợp lệ theo database schema:
+            // 'medication', 'skincare', 'checkup', 'other', 'exercise', 'appointment'
+            const validTypes = ['medication', 'skincare', 'checkup', 'other', 'exercise', 'appointment'];
+            // Nếu type không hợp lệ, mặc định là 'medication'
+            const normalizedType = validTypes.includes(type) ? type : 'medication';
             
             await scheduleModel.update(req.user.userId, id, { 
                 title, 
