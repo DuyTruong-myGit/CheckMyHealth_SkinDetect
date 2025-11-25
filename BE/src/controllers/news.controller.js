@@ -218,7 +218,8 @@ const newsController = {
                 description: description,
                 link: link,
                 image: image || null,
-                source: parsedUrl.hostname
+                source: parsedUrl.hostname,
+                timestamp: Date.now() // Thêm timestamp để sắp xếp theo thời gian
               });
               foundArticles = true;
             }

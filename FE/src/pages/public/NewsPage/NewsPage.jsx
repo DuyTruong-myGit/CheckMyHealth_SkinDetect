@@ -29,14 +29,30 @@ const NewsPage = () => {
     }
   }
 
-  // Shuffle function (Fisher-Yates algorithm)
-  const shuffleArray = (array) => {
-    const shuffled = [...array]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    return shuffled
+  // Sort articles by timestamp (newest to oldest)
+  const sortArticlesByTime = (articles) => {
+    return [...articles].sort((a, b) => {
+      // Sắp xếp theo timestamp (newest first)
+      // Nếu không có timestamp, sử dụng id (parse timestamp từ id format: `${i}-${timestamp}`)
+      const getTimestamp = (article) => {
+        if (article.timestamp) {
+          return article.timestamp
+        }
+        // Parse timestamp từ id nếu có format `${i}-${timestamp}`
+        const idParts = article.id?.split('-')
+        if (idParts && idParts.length > 1) {
+          const timestamp = parseInt(idParts[idParts.length - 1])
+          if (!isNaN(timestamp)) {
+            return timestamp
+          }
+        }
+        return 0
+      }
+      
+      const timestampA = getTimestamp(a)
+      const timestampB = getTimestamp(b)
+      return timestampB - timestampA // Newest to oldest
+    })
   }
 
   // Scrape articles from all sources
@@ -66,9 +82,9 @@ const NewsPage = () => {
 
       // Flatten all articles from all sources
       const allArticles = results.flat()
-      // Shuffle articles before displaying
-      const shuffledArticles = shuffleArray(allArticles)
-      setArticles(shuffledArticles)
+      // Sort articles by timestamp (newest to oldest)
+      const sortedArticles = sortArticlesByTime(allArticles)
+      setArticles(sortedArticles)
       setCurrentPage(1)
       if (allArticles.length === 0) {
         setError('Không tìm thấy bài báo nào')
@@ -102,7 +118,7 @@ const NewsPage = () => {
       <div className="history-card">
         <h1 className="history-title">Tin tức</h1>
         <p className="history-subtitle">
-          Tổng hợp bài báo sức khỏe từ các trang tin do Admin cấu hình
+          Tổng hợp bài báo sức khỏe từ các trang tin uy tín
         </p>
 
         {error && (

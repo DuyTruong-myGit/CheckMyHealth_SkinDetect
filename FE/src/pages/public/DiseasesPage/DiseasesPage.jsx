@@ -51,7 +51,7 @@ const DiseasesPage = () => {
         <div className="history-header">
           <div>
             <h1 className="history-title">Bệnh lý</h1>
-            <p className="history-subtitle">Tra cứu thông tin về các bệnh lý da liễu</p>
+            <p className="history-subtitle">Tra cứu thông tin về các bệnh lý</p>
           </div>
         </div>
 
@@ -62,13 +62,61 @@ const DiseasesPage = () => {
         )}
 
         <div style={{ marginBottom: 16 }}>
-          <input
-            type="text"
-            placeholder="Tìm kiếm bệnh lý..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '10px 12px', fontSize: 16, border: '1px solid #e5e7eb', borderRadius: 6 }}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên bệnh, mã bệnh hoặc triệu chứng (ví dụ: ngứa, đỏ, phát ban)..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ 
+                width: '100%', 
+                padding: '12px 16px', 
+                fontSize: 16, 
+                border: '1px solid #e5e7eb', 
+                borderRadius: 8,
+                transition: 'all 0.2s',
+                boxShadow: search ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#6366f1'
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#e5e7eb'
+                e.currentTarget.style.boxShadow = search ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none'
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 20,
+                  color: '#6b7280',
+                  padding: '4px 8px',
+                  borderRadius: 4
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#1f2937'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#6b7280'}
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <p style={{ 
+            marginTop: 8, 
+            fontSize: 13, 
+            color: '#6b7280',
+            fontStyle: 'italic'
+          }}>
+            💡 Bạn có thể tìm kiếm bằng cách nhập triệu chứng như: "ngứa", "đỏ da", "phát ban", "mụn nước", v.v.
+          </p>
         </div>
 
         {loading ? (
@@ -122,6 +170,21 @@ const DiseasesPage = () => {
                   {disease.disease_code && (
                     <p style={{ margin: '0 0 8px 0', fontSize: 14, color: '#6b7280' }}>
                       Mã: {disease.disease_code}
+                    </p>
+                  )}
+                  {disease.symptoms && (
+                    <p style={{ 
+                      margin: '0 0 8px 0', 
+                      fontSize: 13, 
+                      color: '#4b5563',
+                      lineHeight: 1.5,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      <strong>Triệu chứng:</strong> {disease.symptoms}
                     </p>
                   )}
                   <span style={{ marginTop: 'auto', fontSize: 14, color: '#6366f1', fontWeight: 600 }}>
