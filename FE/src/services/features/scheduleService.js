@@ -89,6 +89,19 @@ const scheduleService = {
       console.error('Error updating schedule:', error);
       throw error;
     }
+  },
+
+  /**
+   * Lấy tất cả lịch trình (không filter theo ngày)
+   */
+  getAll: async () => {
+    try {
+      const response = await apiClient('/api/schedules/all', { method: 'GET' });
+      return response.data || response || [];
+    } catch (error) {
+      console.error('Error fetching all schedules:', error);
+      throw error;
+    }
   }
 };
 

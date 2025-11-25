@@ -106,6 +106,16 @@ const scheduleController = {
         } catch (error) {
             res.status(500).json({ message: 'Lỗi server', error: error.message });
         }
+    },
+
+    // Lấy tất cả lịch trình (không filter theo ngày)
+    getAll: async (req, res) => {
+        try {
+            const schedules = await scheduleModel.getAll(req.user.userId);
+            res.status(200).json(schedules);
+        } catch (error) {
+            res.status(500).json({ message: 'Lỗi server', error: error.message });
+        }
     }
 };
 

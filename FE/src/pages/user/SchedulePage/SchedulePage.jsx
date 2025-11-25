@@ -9,6 +9,7 @@ const SchedulePage = () => {
   const { isAuthenticated } = useAuth()
   const [tasks, setTasks] = useState([])
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [showAll, setShowAll] = useState(false) // Hiển thị tất cả lịch trình
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -30,7 +31,7 @@ const SchedulePage = () => {
     if (isAuthenticated) {
       loadTasks()
     }
-  }, [isAuthenticated, selectedDate])
+  }, [isAuthenticated, selectedDate, showAll])
 
   const getDayOfWeek = (dateStr) => {
     const date = new Date(dateStr)
@@ -42,9 +43,17 @@ const SchedulePage = () => {
     try {
       setLoading(true)
       setError('')
-      const dayOfWeek = getDayOfWeek(selectedDate)
-      const data = await scheduleService.getDailyTasks(selectedDate, dayOfWeek)
-      setTasks(data || [])
+      
+      if (showAll) {
+        // Lấy tất cả lịch trình
+        const data = await scheduleService.getAll()
+        setTasks(data || [])
+      } else {
+        // Lấy lịch trình theo ngày
+        const dayOfWeek = getDayOfWeek(selectedDate)
+        const data = await scheduleService.getDailyTasks(selectedDate, dayOfWeek)
+        setTasks(data || [])
+      }
     } catch (err) {
       console.error('Error loading tasks:', err)
       setError('Lỗi khi tải lịch trình')
@@ -56,7 +65,9 @@ const SchedulePage = () => {
   const handleToggleTask = async (scheduleId, currentStatus) => {
     try {
       const newStatus = currentStatus === 'completed' ? 'pending' : 'completed'
-      await scheduleService.toggleTask(scheduleId, selectedDate, newStatus)
+      // Nếu đang hiển thị tất cả, dùng ngày hiện tại để toggle
+      const dateToUse = showAll ? new Date().toISOString().split('T')[0] : selectedDate
+      await scheduleService.toggleTask(scheduleId, dateToUse, newStatus)
       await loadTasks()
     } catch (err) {
       console.error('Error toggling task:', err)
@@ -327,7 +338,13 @@ const SchedulePage = () => {
                 <input
                   type="time"
                   value={formData.reminder_time}
-                  onChange={(e) => setFormData({ ...formData, reminder_time: e.target.value })}
+                  onChange={(e) => {
+                    // Đảm bảo chỉ lưu format HH:mm (bỏ giây nếu có)
+                    const timeValue = e.target.value
+                    const timeOnly = timeValue.split(':').slice(0, 2).join(':')
+                    setFormData({ ...formData, reminder_time: timeOnly })
+                  }}
+                  step="60"
                   style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
                 />
               </div>
@@ -416,13 +433,36 @@ const SchedulePage = () => {
         )}
 
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Chọn ngày xem lịch trình:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showAll}
+                onChange={(e) => {
+                  setShowAll(e.target.checked)
+                  if (e.target.checked) {
+                    // Khi bật showAll, không cần selectedDate nữa
+                  } else {
+                    // Khi tắt showAll, reset về ngày hiện tại
+                    setSelectedDate(new Date().toISOString().split('T')[0])
+                  }
+                }}
+                style={{ width: 18, height: 18, cursor: 'pointer' }}
+              />
+              <span style={{ fontWeight: 600 }}>Hiển thị tất cả lịch trình</span>
+            </label>
+          </div>
+          {!showAll && (
+            <div>
+              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Chọn ngày xem lịch trình:</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
+              />
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -460,7 +500,7 @@ const SchedulePage = () => {
                   <h3 style={{ margin: '0 0 4px 0', fontSize: 16, fontWeight: 600 }}>
                     {task.title}
                   </h3>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 14, color: '#6b7280' }}>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 14, color: '#6b7280', flexWrap: 'wrap' }}>
                     <span>Loại: {
                       task.type === 'medication' ? 'Uống thuốc' :
                       task.type === 'skincare' ? 'Chăm sóc da' :
@@ -469,8 +509,21 @@ const SchedulePage = () => {
                       task.type === 'appointment' ? 'Cuộc hẹn' :
                       'Khác'
                     }</span>
-                    <span>Giờ: {task.reminder_time}</span>
-                    {task.log_status === 'completed' && task.completed_at && (
+                    <span>Giờ: {task.reminder_time ? task.reminder_time.split(':').slice(0, 2).join(':') : ''}</span>
+                    {showAll && (
+                      <>
+                        {task.specific_date && (
+                          <span>Ngày: {new Date(task.specific_date + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                        )}
+                        {task.repeat_days && (
+                          <span>Lặp lại: {task.repeat_days.split(',').map(d => {
+                            const dayMap = { '2': 'T2', '3': 'T3', '4': 'T4', '5': 'T5', '6': 'T6', '7': 'T7', '8': 'CN' }
+                            return dayMap[d.trim()] || d.trim()
+                          }).join(', ')}</span>
+                        )}
+                      </>
+                    )}
+                    {!showAll && task.log_status === 'completed' && task.completed_at && (
                       <span>Hoàn thành: {new Date(task.completed_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
                     )}
                   </div>

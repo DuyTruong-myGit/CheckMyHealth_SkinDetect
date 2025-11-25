@@ -115,6 +115,26 @@ const scheduleModel = {
              `, [userId]);
              return rows[0];
          } catch (error) { throw error; }
+    },
+
+    // Lấy tất cả lịch trình (không filter theo ngày)
+    getAll: async (userId) => {
+        try {
+            const sql = `
+                SELECT 
+                    s.*,
+                    DATE_FORMAT(s.specific_date, '%Y-%m-%d') as specific_date
+                FROM schedules s
+                WHERE s.user_id = ? 
+                  AND s.is_active = TRUE
+                ORDER BY s.reminder_time ASC, s.title ASC
+            `;
+            const [rows] = await pool.query(sql, [userId]);
+            return rows;
+        } catch (error) {
+            console.error('Error get all schedules:', error);
+            throw error;
+        }
     }
 };
 
