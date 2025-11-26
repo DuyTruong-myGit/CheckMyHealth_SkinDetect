@@ -12,10 +12,41 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
+        
+        classpath("com.android.tools.build:gradle:8.6.0")
+        
+        // Plugin của React Native
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        
+        // Kotlin Plugin: Phải có $kotlinVersion
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// Cấu hình để tránh xung đột thư viện (như lỗi SafeAreaView bạn gặp trước đó)
+subprojects { project ->
+    project.configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'androidx.core' && details.requested.name == 'core-ktx') {
+                details.useVersion "1.13.1"
+            }
+        }
+    }
+
+    // Ép các thư viện con dùng chung cấu hình SDK để tránh lỗi variant
+    project.pluginManager.withPlugin("com.android.library") {
+        android {
+            compileSdkVersion rootProject.ext.compileSdkVersion
+            buildToolsVersion rootProject.ext.buildToolsVersion
+        }
+    }
+}
