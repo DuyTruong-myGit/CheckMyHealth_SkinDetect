@@ -1,13 +1,14 @@
 import { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import '../AdminUsers/AdminUsers.css'
 import diseaseService from '../../../services/features/diseaseService.js'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
-import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
 const AdminDiseases = () => {
   usePageTitle('Quản lý bệnh lý')
+  const navigate = useNavigate()
   const [diseases, setDiseases] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
@@ -16,43 +17,21 @@ const AdminDiseases = () => {
   const [error, setError] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmTarget, setConfirmTarget] = useState(null)
-  const [editMode, setEditMode] = useState(false)
-  const [editingDisease, setEditingDisease] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [formData, setFormData] = useState({
-    disease_code: '',
-    disease_name_vi: '',
-    description: '',
-    symptoms: '',
-    identification_signs: '',
-    prevention_measures: '',
-    treatments_medications: '',
-    dietary_advice: '',
-    source_references: '',
-    image_url: ''
-  })
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState('')
   const [importFile, setImportFile] = useState(null)
   const [importing, setImporting] = useState(false)
   const [importExportExpanded, setImportExportExpanded] = useState(false)
   const [importResult, setImportResult] = useState(null)
 
-  useEffect(() => {
-    return () => {
-      if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview)
-      }
-    }
-  }, [imagePreview])
-
-  const loadDiseases = async (keyword = searchTerm) => {
+  const loadDiseases = async (keyword = searchTerm, preservePage = false) => {
     try {
       setLoading(true)
       setError('')
       const data = await diseaseService.getAll(keyword)
       setDiseases(data || [])
-      setCurrentPage(1)
+      if (!preservePage) {
+        setCurrentPage(1)
+      }
     } catch (err) {
       console.error('Failed to load diseases:', err)
       setError('Lỗi khi tải danh sách bệnh lý')
@@ -62,8 +41,40 @@ const AdminDiseases = () => {
   }
 
   useEffect(() => {
-    loadDiseases()
+    // Check if returning from edit page
+    const savedPage = sessionStorage.getItem('adminDiseases_page')
+    const savedScroll = sessionStorage.getItem('adminDiseases_scroll')
+    const savedSearch = sessionStorage.getItem('adminDiseases_search')
+    
+    if (savedPage) {
+      setCurrentPage(parseInt(savedPage, 10))
+    }
+    if (savedSearch) {
+      setSearchTerm(savedSearch)
+      loadDiseases(savedSearch, !!savedPage)
+    } else {
+      loadDiseases('', !!savedPage)
+    }
+    
+    // Clean up saved state
+    if (savedPage) {
+      sessionStorage.removeItem('adminDiseases_page')
+    }
+    if (savedSearch) {
+      sessionStorage.removeItem('adminDiseases_search')
+    }
   }, [])
+
+  // Restore scroll position after diseases are loaded and page is set
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('adminDiseases_scroll')
+    if (savedScroll && !loading && diseases.length > 0) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedScroll, 10))
+        sessionStorage.removeItem('adminDiseases_scroll')
+      }, 100)
+    }
+  }, [loading, diseases.length])
 
   const paginatedDiseases = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -82,152 +93,15 @@ const AdminDiseases = () => {
   }
 
   const handleAdd = () => {
-    setEditMode(true)
-    setEditingDisease(null)
-    setFormData({
-      disease_code: '',
-      disease_name_vi: '',
-      description: '',
-      symptoms: '',
-      identification_signs: '',
-      prevention_measures: '',
-      treatments_medications: '',
-      dietary_advice: '',
-      source_references: '',
-      image_url: ''
-    })
-    if (imagePreview && imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview)
-    }
-    setImagePreview('')
-    setImageFile(null)
+    navigate('/admin/diseases/new')
   }
 
-  const handleEdit = async (disease) => {
-    try {
-      setLoading(true)
-      setError('')
-      // Lấy đầy đủ thông tin bệnh từ API
-      const fullDisease = await diseaseService.getById(disease.info_id)
-      setEditMode(true)
-      setEditingDisease(fullDisease)
-      setFormData({
-        disease_code: fullDisease.disease_code || '',
-        disease_name_vi: fullDisease.disease_name_vi || '',
-        description: fullDisease.description || '',
-        symptoms: fullDisease.symptoms || '',
-        identification_signs: fullDisease.identification_signs || '',
-        prevention_measures: fullDisease.prevention_measures || '',
-        treatments_medications: fullDisease.treatments_medications || '',
-        dietary_advice: fullDisease.dietary_advice || '',
-        source_references: fullDisease.source_references || '',
-        image_url: fullDisease.image_url || ''
-      })
-      setImageFile(null)
-      setImagePreview(fullDisease.image_url || '')
-    } catch (err) {
-      console.error('Failed to load disease details:', err)
-      setError('Lỗi khi tải thông tin chi tiết bệnh lý')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleImageChange = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    if (imagePreview && imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview)
-    }
-
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
-    setFormData((prev) => ({ ...prev, image_url: '' }))
-  }
-
-  const handleImageUrlChange = (event) => {
-    const url = event.target.value.trim()
-    setFormData((prev) => ({ ...prev, image_url: url }))
-    
-    // Nếu nhập URL, clear file upload
-    if (url) {
-      if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview)
-      }
-      setImageFile(null)
-      setImagePreview(url)
-    } else {
-      // Nếu xóa URL, chỉ clear preview nếu không có file
-      if (!imageFile) {
-        setImagePreview('')
-      }
-    }
-  }
-
-  const handleRemoveImage = () => {
-    if (imagePreview && imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview)
-    }
-    setImagePreview('')
-    setImageFile(null)
-    setFormData((prev) => ({ ...prev, image_url: '' }))
-  }
-
-  const handleSave = async () => {
-    if (!formData.disease_code || !formData.disease_name_vi) {
-      setError('Vui lòng nhập mã bệnh và tên bệnh')
-      return
-    }
-
-    try {
-      setError('')
-      const payload = {
-        ...formData
-      }
-
-      // Nếu có file upload, ưu tiên file (sẽ upload lên Cloudinary)
-      // Nếu không có file nhưng có URL, dùng URL
-      if (imageFile) {
-        payload.image = imageFile
-        // Clear image_url khi có file để backend ưu tiên file
-        payload.image_url = ''
-      } else if (formData.image_url) {
-        // Chỉ gửi URL nếu không có file
-        payload.image_url = formData.image_url.trim()
-      } else {
-        // Nếu không có cả file và URL, clear image_url
-        payload.image_url = ''
-      }
-
-      if (editingDisease) {
-        await diseaseService.update(editingDisease.info_id, payload)
-      } else {
-        await diseaseService.create(payload)
-      }
-      setEditMode(false)
-      setEditingDisease(null)
-      if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview)
-      }
-      setImagePreview('')
-      setImageFile(null)
-      await loadDiseases()
-    } catch (err) {
-      console.error('Failed to save disease:', err)
-      setError(err.response?.data?.message || 'Lỗi khi lưu bệnh lý')
-    }
-  }
-
-  const handleCancelEdit = () => {
-    setEditMode(false)
-    setEditingDisease(null)
-    setError('')
-    if (imagePreview && imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview)
-    }
-    setImagePreview('')
-    setImageFile(null)
+  const handleEdit = (disease) => {
+    // Save current state before navigating
+    sessionStorage.setItem('adminDiseases_page', currentPage.toString())
+    sessionStorage.setItem('adminDiseases_scroll', window.scrollY.toString())
+    sessionStorage.setItem('adminDiseases_search', searchTerm)
+    navigate(`/admin/diseases/${disease.info_id}/edit`)
   }
 
   const handleDelete = async (id) => {
@@ -338,30 +212,28 @@ const AdminDiseases = () => {
           <h1>Bệnh lý</h1>
           <p>Quản lý danh sách bệnh lý da liễu</p>
         </div>
-        {!editMode && (
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <input
-                type="text"
-                placeholder="Tìm theo tên hoặc mã bệnh..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e5e7eb', minWidth: 240 }}
-              />
-              <button type="submit" className="btn">
-                Tìm kiếm
-              </button>
-              {searchTerm && (
-                <button type="button" className="btn" onClick={handleClearSearch}>
-                  Xóa
-                </button>
-              )}
-            </form>
-            <button className="btn btn-primary" onClick={handleAdd}>
-              Thêm bệnh lý mới
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              placeholder="Tìm theo tên hoặc mã bệnh..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e5e7eb', minWidth: 240 }}
+            />
+            <button type="submit" className="btn">
+              Tìm kiếm
             </button>
-          </div>
-        )}
+            {searchTerm && (
+              <button type="button" className="btn" onClick={handleClearSearch}>
+                Xóa
+              </button>
+            )}
+          </form>
+          <button className="btn btn-primary" onClick={handleAdd}>
+            Thêm bệnh lý mới
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -370,8 +242,7 @@ const AdminDiseases = () => {
         </div>
       )}
 
-      {!editMode && (
-        <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
           <div style={{ background: '#f7fafc', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
             <button
               onClick={() => setImportExportExpanded(!importExportExpanded)}
@@ -475,155 +346,8 @@ const AdminDiseases = () => {
             )}
           </div>
         </div>
-      )}
 
-      {editMode ? (
-        <div style={{ background: 'white', padding: 24, borderRadius: 8, border: '1px solid #e5e7eb' }}>
-          <h2 style={{ marginTop: 0 }}>{editingDisease ? 'Chỉnh sửa bệnh lý' : 'Thêm bệnh lý mới'}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Mã bệnh *</label>
-              <input
-                type="text"
-                value={formData.disease_code}
-                onChange={(e) => setFormData({ ...formData, disease_code: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
-                placeholder="VD: E11.9"
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Tên bệnh (Tiếng Việt) *</label>
-              <input
-                type="text"
-                value={formData.disease_name_vi}
-                onChange={(e) => setFormData({ ...formData, disease_name_vi: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
-                placeholder="VD: Bệnh vẩy nến"
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Ảnh minh họa</label>
-              {imagePreview ? (
-                <div style={{ marginBottom: 8, background: '#f9fafb', borderRadius: 6, border: '1px solid #e5e7eb', padding: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-                  <ImageViewer 
-                    src={imagePreview} 
-                    alt="Xem trước ảnh bệnh"
-                    className="disease-image-preview"
-                  />
-                  <div className="image-error" style={{ display: 'none', padding: '12px', background: '#fee', color: '#c33', borderRadius: 6, fontSize: 14 }}>
-                    Không thể tải ảnh từ URL này. Vui lòng kiểm tra lại URL hoặc upload file.
-                  </div>
-                </div>
-              ) : (
-                <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: 14 }}>Chưa có ảnh được chọn</p>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: 4, fontSize: 14, color: '#4a5568' }}>Hoặc nhập URL ảnh:</label>
-                  <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={handleImageUrlChange}
-                    placeholder="https://example.com/image.jpg"
-                    style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4 }}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14, color: '#4a5568', marginRight: 8 }}>Hoặc</span>
-                  <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }}></div>
-                </div>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <label style={{ fontSize: 14, color: '#4a5568', marginRight: 8 }}>Upload từ máy:</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    style={{ flex: 1, minWidth: 200 }}
-                  />
-                  {imagePreview && (
-                    <button type="button" className="btn" onClick={handleRemoveImage}>
-                      Xóa ảnh
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Mô tả</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 100 }}
-                placeholder="Mô tả về bệnh..."
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Triệu chứng</label>
-              <textarea
-                value={formData.symptoms}
-                onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 100 }}
-                placeholder="Các triệu chứng của bệnh..."
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Dấu hiệu nhận biết</label>
-              <textarea
-                value={formData.identification_signs}
-                onChange={(e) => setFormData({ ...formData, identification_signs: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 100 }}
-                placeholder="Các dấu hiệu nhận biết..."
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Biện pháp phòng ngừa</label>
-              <textarea
-                value={formData.prevention_measures}
-                onChange={(e) => setFormData({ ...formData, prevention_measures: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 100 }}
-                placeholder="Các biện pháp phòng ngừa..."
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Điều trị và thuốc</label>
-              <textarea
-                value={formData.treatments_medications}
-                onChange={(e) => setFormData({ ...formData, treatments_medications: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 100 }}
-                placeholder="Phương pháp điều trị và thuốc..."
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Lời khuyên về chế độ ăn</label>
-              <textarea
-                value={formData.dietary_advice}
-                onChange={(e) => setFormData({ ...formData, dietary_advice: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 100 }}
-                placeholder="Lời khuyên về chế độ ăn uống..."
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Nguồn tham khảo</label>
-              <textarea
-                value={formData.source_references}
-                onChange={(e) => setFormData({ ...formData, source_references: e.target.value })}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 4, minHeight: 80 }}
-                placeholder="Các nguồn tham khảo..."
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
-                {editingDisease ? 'Cập nhật' : 'Thêm mới'}
-              </button>
-              <button className="btn" onClick={handleCancelEdit}>
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          {loading ? (
+      {loading ? (
             <div style={{ textAlign: 'center', padding: 32 }}>
               <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid rgba(102, 126, 234, 0.2)', borderTop: '3px solid #667eea', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
               <p style={{ marginTop: 12, color: '#718096' }}>Đang tải...</p>
@@ -683,8 +407,6 @@ const AdminDiseases = () => {
               )}
             </>
           )}
-        </>
-      )}
 
       <ConfirmDialog
         isOpen={confirmOpen}

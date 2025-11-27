@@ -135,6 +135,49 @@ router.put('/', authMiddleware, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/profile/avatar:
+ *   put:
+ *     summary: Cập nhật ảnh đại diện
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: File ảnh đại diện
+ *     responses:
+ *       200:
+ *         description: Cập nhật ảnh đại diện thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Cập nhật ảnh đại diện thành công!"
+ *                 avatar_url:
+ *                   type: string
+ *                   format: uri
+ *                   description: URL ảnh đại diện mới
+ *       400:
+ *         description: Không có file ảnh hoặc file không hợp lệ
+ *       401:
+ *         description: Không có quyền truy cập
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.put(
     '/avatar',
     authMiddleware,

@@ -27,6 +27,7 @@ import MapPage from './pages/user/MapPage/MapPage.jsx'
 import AdminDashboard from './pages/admin/AdminDashboard/AdminDashboard.jsx'
 import AdminUsers from './pages/admin/AdminUsers/AdminUsers.jsx'
 import AdminDiseases from './pages/admin/AdminDiseases/AdminDiseases.jsx'
+import AdminEditDisease from './pages/admin/AdminEditDisease/AdminEditDisease.jsx'
 import AdminNews from './pages/admin/AdminNews/AdminNews.jsx'
 import AdminReports from './pages/admin/AdminReports/AdminReports.jsx'
 import AdminFeedback from './pages/admin/AdminFeedback/AdminFeedback.jsx'
@@ -121,6 +122,8 @@ function App() {
         <Route path="feedback" element={<AdminFeedback />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="diseases" element={<AdminDiseases />} />
+        <Route path="diseases/new" element={<AdminEditDisease />} />
+        <Route path="diseases/:id/edit" element={<AdminEditDisease />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
