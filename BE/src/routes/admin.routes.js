@@ -17,7 +17,7 @@ const { adminMiddleware } = require('../middleware/admin.middleware');
  *         schema:
  *           type: string
  *           enum: [csv, excel]
- *         description: Định dạng file (mặc định: csv)
+ *         description: "Định dạng file (mặc định: csv)"
  *     responses:
  *       200:
  *         description: File được tải về
@@ -155,7 +155,7 @@ router.get('/statistics', adminController.getStatistics);
  *         schema:
  *           type: string
  *           enum: [day, week, month]
- *         description: Khoảng thời gian (mặc định: day)
+ *         description: "Khoảng thời gian (mặc định: day)"
  *     responses:
  *       200:
  *         description: Thống kê theo chuỗi thời gian
@@ -209,7 +209,7 @@ router.get('/statistics/breakdown', adminController.getStatisticsBreakdown);
  *         schema:
  *           type: string
  *           enum: [csv, excel]
- *         description: Định dạng file (mặc định: csv)
+ *         description: "Định dạng file (mặc định: csv)"
  *     responses:
  *       200:
  *         description: File được tải về
@@ -654,7 +654,7 @@ router.get('/reports/diagnosis', adminController.getDiagnosisReport);
  *         schema:
  *           type: string
  *           enum: [csv, excel]
- *         description: Định dạng file (mặc định: csv)
+ *         description: "Định dạng file (mặc định: csv)"
  *     responses:
  *       200:
  *         description: File được tải về
@@ -743,7 +743,7 @@ router.get('/reports/user-growth', adminController.getUserGrowthReport);
  *         name: limit
  *         schema:
  *           type: integer
- *         description: Số lượng kết quả (mặc định: 50)
+ *         description: "Số lượng kết quả (mặc định: 50)"
  *     responses:
  *       200:
  *         description: Danh sách trường hợp khó
@@ -790,7 +790,7 @@ router.get('/reports/ai-difficult-cases', adminController.getAIDifficultCases);
  *         schema:
  *           type: string
  *           enum: [csv, excel]
- *         description: Định dạng file (mặc định: csv)
+ *         description: "Định dạng file (mặc định: csv)"
  *     responses:
  *       200:
  *         description: File được tải về
