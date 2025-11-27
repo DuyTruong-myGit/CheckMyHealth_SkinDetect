@@ -1,9 +1,10 @@
 buildscript {
     ext {
+        // Cấu hình SDK 35 như bạn mong muốn
         buildToolsVersion = "35.0.0"
         minSdkVersion = 24
         compileSdkVersion = 35
-        targetSdkVersion = 34
+        targetSdkVersion = 35
         ndkVersion = "26.1.10909125"
         kotlinVersion = "1.9.24"
     }
@@ -12,13 +13,10 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        
         classpath("com.android.tools.build:gradle:8.6.0")
-        
         // Plugin của React Native
         classpath("com.facebook.react:react-native-gradle-plugin")
-        
-        // Kotlin Plugin: Phải có $kotlinVersion
+        // Kotlin Plugin
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
@@ -32,21 +30,13 @@ allprojects {
     }
 }
 
-// Cấu hình để tránh xung đột thư viện (như lỗi SafeAreaView bạn gặp trước đó)
+// Giữ lại cấu hình xử lý xung đột thư viện, nhưng XÓA đoạn afterEvaluate gây lỗi
 subprojects { project ->
     project.configurations.all {
         resolutionStrategy.eachDependency { details ->
             if (details.requested.group == 'androidx.core' && details.requested.name == 'core-ktx') {
                 details.useVersion "1.13.1"
             }
-        }
-    }
-
-    // Ép các thư viện con dùng chung cấu hình SDK để tránh lỗi variant
-    project.pluginManager.withPlugin("com.android.library") {
-        android {
-            compileSdkVersion rootProject.ext.compileSdkVersion
-            buildToolsVersion rootProject.ext.buildToolsVersion
         }
     }
 }

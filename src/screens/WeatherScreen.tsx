@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { WeatherService } from '../services/WeatherService';
 
 interface WeatherData {
@@ -8,32 +8,26 @@ interface WeatherData {
   desc: string;
   humidity: number;
   windSpeed: number;
-  icon: string;
 }
 
-const WeatherScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () => void }) => {
-  
+const WeatherScreen = ({ navigation }: { navigation?: any }) => {
   const [weather, setWeather] = useState<WeatherData>({
     temp: 0,
     city: 'Đang tải...',
     desc: '',
     humidity: 0,
     windSpeed: 0,
-    icon: '01d',
   });
 
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
 
   const fetchWeather = async () => {
     try {
       setLoading(true);
-      setErrorMsg('');
       const data = await WeatherService.getWeatherByCity('Ho Chi Minh City');
       setWeather(data);
     } catch (error) {
-      console.error(error);
-      setErrorMsg('Lỗi kết nối');
+      setWeather(prev => ({ ...prev, city: 'Lỗi kết nối' }));
     } finally {
       setLoading(false);
     }
@@ -43,75 +37,46 @@ const WeatherScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () =
     fetchWeather();
   }, []);
 
-  const handleGoBack = () => {
-    if (navigation && navigation.goBack) {
-      navigation.goBack();
-    } else if (onBack) {
-      onBack();
-    }
-  };
-
   const formatCityName = (name: string) => {
+    // Rút gọn tên để hiển thị to hơn không bị tràn
     return name.replace('Thành phố ', '').replace('Tỉnh ', '');
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
-
   return (
-    // QUAY VỀ SỬ DỤNG VIEW (Không cuộn)
     <View style={styles.container}>
       <View style={styles.card}>
         
-        {/* 1. Tiêu đề */}
-        <Text style={styles.headerTitle}>THỜI TIẾT</Text>
-
-        {/* 2. Tên thành phố */}
-        <Text style={styles.cityText}>{formatCityName(weather.city)}</Text>
-
-        {/* 3. Cụm Icon + Nhiệt độ */}
-        <View style={styles.tempContainer}>
-            <Image 
-              source={{ uri: `https://openweathermap.org/img/wn/${weather.icon}@2x.png` }}
-              style={styles.weatherIcon}
-            />
-            <Text style={styles.tempText}>{weather.temp}°</Text>
-        </View>
-
-        {/* 4. Mô tả */}
-        <Text style={styles.descText}>
-          {weather.desc.charAt(0).toUpperCase() + weather.desc.slice(1)}
+        {/* 1. Tên thành phố (Đưa lên trên cùng) */}
+        <Text style={styles.cityText} numberOfLines={1}>
+          {formatCityName(weather.city)}
         </Text>
 
-        <View style={styles.divider} />
+        {/* 2. Nhiệt độ + Icon (Phóng to hết cỡ) */}
+        <View style={styles.mainContent}>
+            <Text style={styles.thermometerIcon}>🌡️</Text>
+            <Text style={styles.tempText}>{weather.temp}°C</Text>
+        </View>
 
-        {/* 5. Thông tin chi tiết (Độ ẩm/Gió) */}
+        {/* 3. Mô tả thời tiết */}
+        <Text style={styles.descText}>
+          {weather.desc ? weather.desc.charAt(0).toUpperCase() + weather.desc.slice(1) : ''}
+        </Text>
+
+        {/* 4. Chi tiết (Ghi rõ chữ Độ ẩm / Gió) */}
         <View style={styles.detailsContainer}>
-          <View style={styles.infoBox}>
-            <Text style={styles.emoji}>💧</Text>
-            <Text style={styles.value}>{weather.humidity}%</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>💧 Độ ẩm:</Text>
+            <Text style={styles.detailValue}>{weather.humidity}%</Text>
           </View>
-
-          <View style={styles.infoBox}>
-            <Text style={styles.emoji}>💨</Text>
-            <Text style={styles.value}>{weather.windSpeed} m/s</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>💨 Gió:</Text>
+            <Text style={styles.detailValue}>{weather.windSpeed} m/s</Text>
           </View>
         </View>
 
-        {/* 6. Nút Quay lại (Nằm gọn trong hình tròn) */}
-        <TouchableOpacity 
-          onPress={errorMsg ? fetchWeather : handleGoBack} 
-          style={styles.footerButton}
-          activeOpacity={0.6}
-        >
-          <Text style={styles.footerText}>
-            {errorMsg ? "↻ Thử lại" : "Quay lại"}
-          </Text>
+        {/* 5. Nút Quay lại (Giữ nguyên style chuẩn) */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Quay lại</Text>
         </TouchableOpacity>
 
       </View>
@@ -120,98 +85,35 @@ const WeatherScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () =
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000', // Nền đen bao quanh
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+  card: { width: 192, height: 192, borderRadius: 96, backgroundColor: '#E6F7FF', alignItems: 'center', paddingTop: 18, overflow: 'hidden' },
+  
+  // Tăng cỡ chữ thành phố
+  cityText: { fontSize: 14, fontWeight: '900', color: '#003366', marginBottom: 2, textAlign: 'center', width: '90%' },
+  
+  // Cụm nhiệt độ to
+  mainContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
+  thermometerIcon: { fontSize: 32, marginRight: 5 }, 
+  tempText: { fontSize: 36, fontWeight: 'bold', color: '#FF9500', includeFontPadding: false }, // Font cực to
+  
+  descText: { fontSize: 11, color: '#555', fontStyle: 'italic', marginBottom: 8, fontWeight: '500' },
+  
+  // Container chi tiết
+  detailsContainer: { width: '80%', alignItems: 'center', marginBottom: 5 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', width: '90%', marginBottom: 2 },
+  detailLabel: { fontSize: 10, color: '#666' },
+  detailValue: { fontSize: 10, fontWeight: 'bold', color: '#333' },
+
+  backButton: { 
+    marginTop: 'auto', 
+    paddingVertical: 8, 
+    width: '100%', 
+    alignItems: 'center', 
+    backgroundColor: '#D0EBFF', 
+    borderTopWidth: 1, 
+    borderTopColor: '#C1E1FF' 
   },
-  card: {
-    width: 192,  // Kích thước cố định cho đồng hồ
-    height: 192,
-    borderRadius: 96, // Bo tròn hoàn hảo
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    // Căn giữa nội dung theo chiều dọc, phân bổ đều khoảng trống
-    justifyContent: 'center', 
-    paddingVertical: 5, // Padding nhỏ để nội dung sát mép hơn nhưng vẫn an toàn
-  },
-  headerTitle: {
-    fontSize: 9,
-    color: '#007AFF',
-    fontWeight: 'bold',
-    marginTop: 8, // Đẩy xuống một chút khỏi mép trên cùng
-    marginBottom: 0,
-  },
-  cityText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 0,
-  },
-  tempContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -4, // Kéo các phần tử lại gần nhau hơn
-    marginBottom: -4,
-  },
-  weatherIcon: {
-    width: 46, // Kích thước vừa vặn
-    height: 46,
-  },
-  tempText: {
-    fontSize: 34,
-    fontWeight: 'bold',
-    color: '#FF9500',
-    marginLeft: -2,
-  },
-  descText: {
-    fontSize: 10,
-    color: '#666',
-    marginBottom: 3,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    paddingHorizontal: 10, // Tránh chữ dài chạm mép cong
-  },
-  divider: {
-    width: '40%',
-    height: 1,
-    backgroundColor: '#eee',
-    marginBottom: 3,
-  },
-  detailsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-    marginBottom: 4,
-  },
-  infoBox: {
-    alignItems: 'center',
-    width: 50, // Cố định chiều rộng để cân đối
-  },
-  emoji: {
-    fontSize: 12,
-    marginBottom: 0,
-  },
-  value: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  footerButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    marginBottom: 8, // Đẩy lên khỏi mép dưới cùng
-  },
-  footerText: {
-    fontSize: 10,
-    color: '#555',
-    fontWeight: '600',
-  }
+  backButtonText: { fontSize: 11, color: '#003366', fontWeight: 'bold' }
 });
 
 export default WeatherScreen;

@@ -1,39 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { DataService } from '../services/DataService';
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
-  const [alertMsg, setAlertMsg] = useState('Đang kết nối Server...');
+  const [showWarning, setShowWarning] = useState(false);
 
   const checkHealthStatus = async () => {
     try {
       const records = await DataService.getRecords();
-      
       const today = new Date();
-      const yesterday = new Date();
-      yesterday.setDate(today.getDate() - 1);
-
       const statsToday = DataService.calculateDailyStats(records, today);
-      const statsYesterday = DataService.calculateDailyStats(records, yesterday);
 
-      if (statsToday.avgHeartRate === 0 && statsToday.totalSteps === 0) {
-        setAlertMsg('⚠️ Bạn chưa đo sức khỏe hôm nay!');
-        return;
+      // Nếu chưa có dữ liệu gì (Nhịp tim = 0 và Bước chân = 0) thì hiện cảnh báo
+      if (statsToday.avgHeartRate === 0 && statsToday.avgSteps === 0) {
+        setShowWarning(true);
+      } else {
+        setShowWarning(false); // Đã đo rồi thì ẩn luôn
       }
-
-      if (statsYesterday.avgHeartRate > 0 && statsToday.avgHeartRate > statsYesterday.avgHeartRate + 5) {
-        setAlertMsg('⚠️ Nhịp tim tăng cao hơn hôm qua!');
-        return;
-      }
-
-      if (statsYesterday.totalSteps > 0 && statsToday.totalSteps < statsYesterday.totalSteps - 500) {
-        setAlertMsg('📉 Bạn vận động ít hơn hôm qua.');
-        return;
-      }
-
-      setAlertMsg('✅ Sức khỏe hôm nay ổn định.');
     } catch (e) {
-      setAlertMsg('❌ Không thể kết nối Server');
+      setShowWarning(false);
     }
   };
 
@@ -45,28 +30,52 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.appName}>MyHealth Watch</Text>
-        <View style={[styles.alertBox, alertMsg.includes('✅') ? styles.alertGood : styles.alertWarn]}>
-            <Text style={styles.alertText}>{alertMsg}</Text>
+        
+        <Text style={styles.greetingText}>Xin chào,</Text>
+        <Text style={styles.appName}>CHECKMYHEALTH</Text>
+        
+        {/* Chỉ hiện Box này khi chưa có dữ liệu */}
+        {showWarning && (
+            <View style={styles.alertBox}>
+                <Text style={styles.alertText}>⚠️ Chưa có dữ liệu hôm nay</Text>
+            </View>
+        )}
+
+        {/* Thêm khoảng trống nếu không có thông báo để layout cân đối */}
+        {!showWarning && <View style={{height: 10}} />}
+
+        <View style={styles.gridContainer}>
+            <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('HealthMeasure')}>
+                <Text style={styles.icon}>❤️</Text>
+                <Text style={styles.menuText}>Sức khỏe</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Workout')}>
+                <Text style={styles.icon}>🏃</Text>
+                <Text style={styles.menuText}>Luyện tập</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('History')}>
+                <Text style={styles.icon}>📅</Text>
+                <Text style={styles.menuText}>Lịch sử</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Analysis')}>
+                <Text style={styles.icon}>📊</Text>
+                <Text style={styles.menuText}>Phân tích</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Weather')}>
+                <Text style={styles.icon}>☁️</Text>
+                <Text style={styles.menuText}>Thời tiết</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Profile')}>
+                <Text style={styles.icon}>👤</Text>
+                <Text style={styles.menuText}>Hồ sơ</Text>
+            </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.menuContainer} contentContainerStyle={styles.menuContent}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('HealthMeasure')}>
-                <Text style={styles.menuText}>❤️ Đo Sức khỏe</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Workout')}>
-                <Text style={styles.menuText}>🏃 Chạy bộ</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('History')}>
-                <Text style={styles.menuText}>📅 Lịch sử</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Analysis')}>
-                <Text style={styles.menuText}>📊 Phân tích</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Weather')}>
-                <Text style={styles.menuText}>☁️ Thời tiết</Text>
-            </TouchableOpacity>
-        </ScrollView>
       </View>
     </View>
   );
@@ -74,16 +83,18 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
-  card: { width: 192, height: 192, borderRadius: 96, backgroundColor: '#E6F7FF', alignItems: 'center', paddingTop: 15, overflow: 'hidden' },
-  appName: { fontSize: 12, fontWeight: '900', color: '#003366', marginBottom: 5, textTransform: 'uppercase' },
-  alertBox: { width: '85%', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 8, marginBottom: 5, alignItems: 'center', justifyContent: 'center' },
-  alertWarn: { backgroundColor: '#FFF3CD', borderWidth: 1, borderColor: '#FFEEBA' },
-  alertGood: { backgroundColor: '#D4EDDA', borderWidth: 1, borderColor: '#C3E6CB' },
-  alertText: { fontSize: 9, color: '#333', textAlign: 'center', fontWeight: '600' },
-  menuContainer: { width: '100%', flex: 1 },
-  menuContent: { alignItems: 'center', paddingBottom: 20 },
-  menuItem: { width: 140, backgroundColor: '#fff', paddingVertical: 8, borderRadius: 20, marginBottom: 5, alignItems: 'center', elevation: 1 },
-  menuText: { fontSize: 11, fontWeight: 'bold', color: '#333' }
+  card: { width: 192, height: 192, borderRadius: 96, backgroundColor: '#E6F7FF', alignItems: 'center', paddingTop: 10, overflow: 'hidden' },
+  greetingText: { fontSize: 8, color: '#666', marginBottom: 0 },
+  appName: { fontSize: 11, fontWeight: '900', color: '#003366', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+  // Style cảnh báo màu vàng
+  alertBox: { width: '80%', paddingVertical: 2, borderRadius: 4, marginBottom: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF3CD' },
+  alertText: { fontSize: 8, color: '#856404', fontWeight: '600' },
+
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', width: '90%' },
+  gridItem: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', margin: 3, elevation: 3 },
+  icon: { fontSize: 16, marginBottom: 0 },
+  menuText: { fontSize: 7, fontWeight: 'bold', color: '#333', marginTop: 0 }
 });
 
 export default HomeScreen;
