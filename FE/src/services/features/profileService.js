@@ -64,3 +64,25 @@ export const updateAvatar = async (file) => {
   }
 }
 
+/**
+ * Đổi mật khẩu trực tiếp (cần nhập mật khẩu cũ)
+ * @param {Object} passwordData - Dữ liệu đổi mật khẩu
+ * @param {string} passwordData.oldPassword - Mật khẩu hiện tại
+ * @param {string} passwordData.newPassword - Mật khẩu mới
+ * @returns {Promise<Object>} Kết quả đổi mật khẩu
+ */
+export const changePassword = async (passwordData) => {
+  try {
+    const response = await apiClient('/api/profile/password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('hết hạn')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể đổi mật khẩu')
+  }
+}
+

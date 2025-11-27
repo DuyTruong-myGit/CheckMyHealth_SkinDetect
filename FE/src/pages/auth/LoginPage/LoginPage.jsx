@@ -32,7 +32,8 @@ const LoginPage = () => {
       // Luôn redirect về trang home khi login để tránh giữ vị trí của user trước
       navigate('/', { replace: true })
     } catch (err) {
-      setError(err.message || 'Đăng nhập thất bại')
+      // Luôn hiển thị message chung để bảo mật
+      setError('Sai tên đăng nhập hoặc mật khẩu')
     } finally {
       setLoading(false)
     }
