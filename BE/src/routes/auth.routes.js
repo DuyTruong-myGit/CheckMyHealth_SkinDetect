@@ -417,4 +417,33 @@ router.post('/public-reset-password', async (req, res) => {
     }
 });
 
+
+
+
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Đăng nhập bằng Google (Redirect đến Google)
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect đến trang đăng nhập Google
+ */
+router.get('/google', authController.googleAuth);
+
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback (Tự động xử lý sau khi đăng nhập Google)
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       302:
+ *         description: Redirect về frontend kèm JWT token
+ */
+router.get('/google/callback', authController.googleCallback);
+
 module.exports = router;

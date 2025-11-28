@@ -7,12 +7,13 @@ const authRoutes = require('./routes/auth.routes');
 const diagnosisRoutes = require('./routes/diagnosis.routes');
 const profileRoutes = require('./routes/profile.routes');
 const adminRoutes = require('./routes/admin.routes');
-const newsRoutes = require('./routes/news.routes');
+// const newsRoutes = require('./routes/news.routes');
 const chatRoutes = require('./routes/chat.routes.js');
 const feedbackRoutes = require('./routes/feedback.routes.js')
 const notificationRoutes = require('./routes/notification.routes');
 const diseaseRoutes = require('./routes/disease.routes');
 const scheduleRoutes = require('./routes/schedule.routes');
+const passport = require('./config/passport');
 
 // Database initialization
 const { initializeDatabase } = require('./config/init');
@@ -32,6 +33,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize());
 
 
 // --- Routes ---

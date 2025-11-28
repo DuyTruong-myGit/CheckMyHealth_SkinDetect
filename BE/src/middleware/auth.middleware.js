@@ -39,3 +39,46 @@ module.exports = {
     authMiddleware,
     adminMiddleware
 };
+
+
+
+// middleware/auth.js
+
+// Middleware kiểm tra đã đăng nhập chưa
+const isAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return res.status(401).json({
+    success: false,
+    message: 'Vui lòng đăng nhập để tiếp tục'
+  });
+};
+
+// Middleware kiểm tra role admin
+const isAdmin = (req, res, next) => {
+  if (req.isAuthenticated() && req.user.role === 'admin') {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    message: 'Bạn không có quyền truy cập'
+  });
+};
+
+// Middleware kiểm tra account status
+const isActiveAccount = (req, res, next) => {
+  if (req.user && req.user.account_status === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Tài khoản của bạn đã bị tạm khóa'
+    });
+  }
+  next();
+};
+
+module.exports = {
+  isAuthenticated,
+  isAdmin,
+  isActiveAccount
+};

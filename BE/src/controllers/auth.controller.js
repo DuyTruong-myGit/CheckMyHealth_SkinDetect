@@ -1,6 +1,7 @@
 const userModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
 const authController = {
     /**
      * Xử lý đăng ký người dùng mới
@@ -91,7 +92,80 @@ const authController = {
             // Trả về message chung để bảo mật
             res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
         }
-    }
+    },
+
+
+
+
+
+
+
+
+
+    /**
+     * Bước 1: Redirect user đến Google để đăng nhập
+     */
+    googleAuth: (req, res, next) => {
+        passport.authenticate('google', {
+            scope: ['profile', 'email'],
+            session: false // QUAN TRỌNG: Không dùng session
+        })(req, res, next);
+    },
+
+    /**
+     * Bước 2: Google callback - Nhận thông tin user và tạo JWT
+     */
+    googleCallback: (req, res, next) => {
+        passport.authenticate('google', { 
+            session: false // QUAN TRỌNG: Không dùng session
+        }, (err, user) => {
+            if (err) {
+                console.error('Google Auth Error:', err);
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+            }
+
+            if (!user) {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_user`);
+            }
+
+            // Kiểm tra account status
+            if (user.account_status === 'suspended') {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=account_suspended`);
+            }
+
+            try {
+                // Tạo JWT giống như đăng nhập thường
+                const payload = {
+                    userId: user.user_id,
+                    email: user.email,
+                    role: user.role
+                };
+
+                const token = jwt.sign(
+                    payload,
+                    process.env.JWT_SECRET,
+                    { expiresIn: '24h' }
+                );
+
+                // Redirect về frontend kèm token
+                // Frontend sẽ lấy token từ URL và lưu vào localStorage
+                return res.redirect(
+                    `${process.env.FRONTEND_URL}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
+                        userId: user.user_id,
+                        email: user.email,
+                        fullName: user.full_name,
+                        avatar: user.avatar_url,
+                        role: user.role
+                    }))}`
+                );
+
+            } catch (error) {
+                console.error('JWT Error:', error);
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=token_failed`);
+            }
+        })(req, res, next);
+    },
+
 };
 
 module.exports = authController;
