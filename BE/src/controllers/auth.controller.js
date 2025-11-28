@@ -1,7 +1,6 @@
 const userModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const passport = require('passport');
 const authController = {
     /**
      * Xử lý đăng ký người dùng mới
@@ -96,12 +95,6 @@ const authController = {
 
 
 
-
-
-
-
-
-
     /**
      * Bước 1: Redirect user đến Google để đăng nhập
      */
@@ -165,6 +158,10 @@ const authController = {
             }
         })(req, res, next);
     },
+
+
+
+
 
 };
 

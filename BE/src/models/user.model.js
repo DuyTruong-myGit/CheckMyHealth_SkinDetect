@@ -236,10 +236,12 @@ const userModel = {
 
 
 
-    // ========================================
-// THÊM VÀO CUỐI FILE user.model.js
-// (TRƯỚC dòng module.exports = userModel;)
-// ========================================
+
+
+
+
+
+
 
     /**
      * Tìm user theo provider và provider_id (cho Google OAuth)
