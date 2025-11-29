@@ -29,9 +29,9 @@ const SiteFooter = () => {
   const getStatusText = () => {
     switch (connectionStatus) {
       case 'connected':
-        return '🟢 Backend đang hoạt động'
+        return '🟢 Server đang hoạt động'
       case 'disconnected':
-        return '🔴 Backend không kết nối'
+        return '🔴 Server không kết nối'
       default:
         return '🟡 Đang kiểm tra...'
     }

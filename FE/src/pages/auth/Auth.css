@@ -286,6 +286,39 @@
   line-height: 1.4;
 }
 
+.auth-skip-button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: rgba(0, 102, 204, 0.1);
+  color: #0066CC;
+  border: 2px solid rgba(0, 102, 204, 0.2);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  line-height: 1.4;
+}
+
+.auth-skip-button:hover {
+  background: rgba(0, 102, 204, 0.15);
+  border-color: rgba(0, 102, 204, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+}
+
+.auth-skip-button--error {
+  background: rgba(229, 57, 53, 0.1);
+  color: #E53935;
+  border-color: rgba(229, 57, 53, 0.2);
+}
+
+.auth-skip-button--error:hover {
+  background: rgba(229, 57, 53, 0.15);
+  border-color: rgba(229, 57, 53, 0.3);
+  box-shadow: 0 2px 8px rgba(229, 57, 53, 0.15);
+}
+
 .auth-footer {
   margin-top: 2rem;
   text-align: center;

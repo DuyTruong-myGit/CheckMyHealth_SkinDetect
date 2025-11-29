@@ -14,6 +14,7 @@ const GoogleCallbackPage = () => {
   const [loading, setLoading] = useState(true)
   const [success, setSuccess] = useState(false)
   const [countdown, setCountdown] = useState(5)
+  const [timerId, setTimerId] = useState(null)
 
   useEffect(() => {
     const processCallback = async () => {
@@ -131,6 +132,19 @@ const GoogleCallbackPage = () => {
     processCallback()
   }, [searchParams, navigate, updateUser])
 
+  // Hàm redirect ngay lập tức (skip timer)
+  const handleSkipWait = () => {
+    if (timerId) {
+      clearInterval(timerId)
+      setTimerId(null)
+    }
+    if (success) {
+      navigate('/', { replace: true })
+    } else {
+      navigate('/login', { replace: true })
+    }
+  }
+
   // Timer đếm ngược và redirect
   useEffect(() => {
     if (!loading && (success || error)) {
@@ -150,7 +164,12 @@ const GoogleCallbackPage = () => {
         })
       }, 1000)
 
-      return () => clearInterval(timer)
+      setTimerId(timer)
+
+      return () => {
+        clearInterval(timer)
+        setTimerId(null)
+      }
     }
   }, [loading, success, error, navigate])
 
@@ -196,6 +215,13 @@ const GoogleCallbackPage = () => {
               <p className="auth-success-subtitle">
                 Đang chuyển hướng về trang chủ trong {countdown} giây...
               </p>
+              <button
+                type="button"
+                onClick={handleSkipWait}
+                className="auth-skip-button"
+              >
+                Không muốn đợi
+              </button>
             </div>
           </div>
         )}
@@ -209,6 +235,13 @@ const GoogleCallbackPage = () => {
               <p className="auth-error-subtitle">
                 Đang chuyển hướng về trang đăng nhập trong {countdown} giây...
               </p>
+              <button
+                type="button"
+                onClick={handleSkipWait}
+                className="auth-skip-button auth-skip-button--error"
+              >
+                Không muốn đợi
+              </button>
             </div>
           </div>
         )}
