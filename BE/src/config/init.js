@@ -20,6 +20,20 @@ const initializeDatabase = async () => {
     `);
 
     console.log('✅ news_sources table checked/created');
+
+    // Kiểm tra bảng watch_measurements (bảng đã được tạo sẵn trong DB)
+    const [watchTableExists] = await connection.query(`
+      SELECT COUNT(*) as count 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'watch_measurements'
+    `);
+    
+    if (watchTableExists[0].count > 0) {
+      console.log('✅ watch_measurements table exists');
+    } else {
+      console.warn('⚠️ watch_measurements table not found - please create it manually');
+    }
   } catch (error) {
     console.error('❌ Error initializing database:', error.message);
     throw error;

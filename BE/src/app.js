@@ -13,6 +13,7 @@ const feedbackRoutes = require('./routes/feedback.routes.js')
 const notificationRoutes = require('./routes/notification.routes');
 const diseaseRoutes = require('./routes/disease.routes');
 const scheduleRoutes = require('./routes/schedule.routes');
+const watchRoutes = require('./routes/watch.routes');
 const passport = require('./config/passport');
 const { globalLimiter } = require('./middleware/limiter.middleware');
 // Database initialization
@@ -112,11 +113,37 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/diseases', diseaseRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/watch', watchRoutes);
 
 // Initialize database tables
 initializeDatabase().catch(error => {
     console.error('Fatal: Database initialization failed:', error);
     process.exit(1);
+});
+
+// --- Global Error Handler (Phải đặt sau tất cả routes) ---
+app.use((err, req, res, next) => {
+    console.error('❌ Unhandled Error:', err);
+    
+    // Nếu response đã được gửi, chuyển cho Express default error handler
+    if (res.headersSent) {
+        return next(err);
+    }
+    
+    // Trả về lỗi dạng JSON
+    res.status(err.status || 500).json({
+        message: err.message || 'Lỗi máy chủ nội bộ',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+});
+
+// --- 404 Handler (Phải đặt sau tất cả routes và error handler) ---
+app.use((req, res) => {
+    res.status(404).json({
+        message: 'API endpoint không tồn tại',
+        path: req.path,
+        method: req.method
+    });
 });
 
 // --- Xuất app ra ---
