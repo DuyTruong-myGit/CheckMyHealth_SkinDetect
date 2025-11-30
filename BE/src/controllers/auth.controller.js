@@ -108,6 +108,68 @@ const authController = {
 
 
 
+
+    /**
+     * Đổi mật khẩu (Yêu cầu nhập mật khẩu cũ)
+     */
+    changePassword: async (req, res) => {
+        try {
+            const { oldPassword, newPassword } = req.body;
+            const userId = req.user.userId;
+
+            // 1. Validate đầu vào
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({ message: 'Vui lòng nhập mật khẩu cũ và mật khẩu mới.' });
+            }
+
+            // 2. Kiểm tra độ mạnh mật khẩu mới (Sử dụng hàm isStrongPassword đã viết)
+            // Lưu ý: Phải đảm bảo hàm isStrongPassword được khai báo ở scope truy cập được
+            // hoặc copy lại logic regex ở đây.
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                return res.status(400).json({ 
+                    message: 'Mật khẩu mới quá yếu. Yêu cầu: 8 ký tự, chữ hoa, thường, số và ký tự đặc biệt.' 
+                });
+            }
+
+            // 3. Lấy thông tin user (kèm password hash hiện tại)
+            const user = await userModel.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'Người dùng không tồn tại.' });
+            }
+
+            // 4. Nếu là tài khoản Google/Facebook thì không có mật khẩu cũ để đổi
+            if (user.provider !== 'local' && !user.password_hash) {
+                return res.status(400).json({ message: 'Tài khoản đăng nhập bằng Google/Facebook không thể đổi mật khẩu theo cách này.' });
+            }
+
+            // 5. Kiểm tra mật khẩu cũ có đúng không
+            const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Mật khẩu cũ không chính xác.' });
+            }
+
+            // 6. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
+            if (oldPassword === newPassword) {
+                 return res.status(400).json({ message: 'Mật khẩu mới không được trùng với mật khẩu cũ.' });
+            }
+
+            // 7. Hash mật khẩu mới và lưu
+            const salt = await bcrypt.genSalt(10);
+            const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+            await userModel.changePassword(userId, newPasswordHash);
+
+            res.status(200).json({ message: 'Đổi mật khẩu thành công!' });
+
+        } catch (error) {
+            console.error('Change password error:', error);
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+
+
     // ========================================
 // THÊM VÀO CUỐI authController OBJECT
 // (THAY THẾ googleAuth và googleCallback trước đó)

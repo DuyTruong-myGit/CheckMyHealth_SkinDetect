@@ -231,6 +231,21 @@ const userModel = {
         }
     },
 
+    /**
+     * (User) Đổi mật khẩu trực tiếp (Change Password)
+     */
+    changePassword: async (userId, passwordHash) => {
+        try {
+            const [result] = await pool.query(
+                'UPDATE users SET password_hash = ? WHERE user_id = ?',
+                [passwordHash, userId]
+            );
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error changing password:', error);
+            throw error;
+        }
+    },
 
 
 

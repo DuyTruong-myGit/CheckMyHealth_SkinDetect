@@ -83,6 +83,12 @@ const ProfilePage = () => {
     }
   }
 
+  // Kiểm tra độ mạnh mật khẩu (match với backend)
+  const isStrongPassword = (password) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    return regex.test(password)
+  }
+
   const handleChangePassword = async (e) => {
     e.preventDefault()
     setError('')
@@ -93,8 +99,9 @@ const ProfilePage = () => {
       return
     }
 
-    if (newPassword.length < 6) {
-      setError('Mật khẩu mới phải có ít nhất 6 ký tự')
+    // Kiểm tra độ mạnh mật khẩu (match với backend)
+    if (!isStrongPassword(newPassword)) {
+      setError('Mật khẩu quá yếu. Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.')
       return
     }
 
@@ -261,8 +268,11 @@ const ProfilePage = () => {
                       placeholder="••••••••"
                       required
                       disabled={passwordLoading}
-                      minLength={6}
+                      minLength={8}
                     />
+                    <small style={{ color: '#666666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      Yêu cầu: Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)
+                    </small>
                   </div>
 
                   <div className="profile-form-group">
@@ -275,7 +285,7 @@ const ProfilePage = () => {
                       placeholder="••••••••"
                       required
                       disabled={passwordLoading}
-                      minLength={6}
+                      minLength={8}
                     />
                   </div>
 
