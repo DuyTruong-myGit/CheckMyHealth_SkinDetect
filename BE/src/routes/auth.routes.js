@@ -259,6 +259,11 @@ router.post('/reset-password-with-code', authMiddleware, authLimiter, async (req
     }
 });
 
+
+
+router.post('/change-password', authMiddleware, authLimiter, authController.changePassword);
+
+
 // === API MỚI 1: (CÔNG KHAI) YÊU CẦU RESET KHI QUÊN ===
 
 /**
