@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getUsers, createUser, updateUserRole } from '../../../services/features/adminService.js'
+import { getUsers, createUser, updateUserRole, updateUserStatus } from '../../../services/features/adminService.js'
 import { formatDateAndTime } from '../../../utils/format.js'
 import SortableTableHeader from '../../../components/ui/SortableTableHeader/SortableTableHeader.jsx'
 import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
@@ -32,6 +32,7 @@ const AdminUsers = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [addUserLoading, setAddUserLoading] = useState(false)
   const [roleChanging, setRoleChanging] = useState(false)
+  const [statusChanging, setStatusChanging] = useState(false)
 
   // Fetch data
   useEffect(() => {
@@ -143,6 +144,30 @@ const AdminUsers = () => {
       setState({ loading: false, data, error: null })
     } finally {
       setRoleChanging(false)
+    }
+  }
+
+  const handleStatusChange = async (userId, newStatus, userName) => {
+    // Confirm trước khi thay đổi
+    const statusText = newStatus === 'active' ? 'kích hoạt' : 'đình chỉ'
+    if (!window.confirm(`Bạn có chắc muốn ${statusText} tài khoản của ${userName}?`)) {
+      return
+    }
+
+    try {
+      setStatusChanging(true)
+      await updateUserStatus(userId, newStatus)
+      // Refresh data
+      const data = await getUsers(searchTerm)
+      setState({ loading: false, data, error: null })
+      alert(`Đã ${statusText} tài khoản thành công`)
+    } catch (error) {
+      alert(error.message || 'Không thể thay đổi trạng thái')
+      // Reload để reset combobox về giá trị cũ
+      const data = await getUsers(searchTerm)
+      setState({ loading: false, data, error: null })
+    } finally {
+      setStatusChanging(false)
     }
   }
 
@@ -265,9 +290,28 @@ const AdminUsers = () => {
                         )}
                       </td>
                       <td>
-                        <span className={`badge badge--${user.account_status ?? 'active'}`}>
-                          {user.account_status ?? 'active'}
-                        </span>
+                        {currentUserId && currentUserId === user.user_id ? (
+                          <span className={`badge badge--${user.account_status ?? 'active'}`}>
+                            {user.account_status === 'suspended' ? 'Đình chỉ' : 'Hoạt động'}
+                          </span>
+                        ) : (
+                          <select
+                            value={user.account_status || 'active'}
+                            onChange={(e) => handleStatusChange(user.user_id, e.target.value, user.full_name || user.email)}
+                            disabled={statusChanging}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              border: '1px solid #e5e7eb',
+                              fontSize: '0.9rem',
+                              cursor: statusChanging ? 'not-allowed' : 'pointer',
+                              background: 'white'
+                            }}
+                          >
+                            <option value="active">Hoạt động</option>
+                            <option value="suspended">Đình chỉ</option>
+                          </select>
+                        )}
                       </td>
                       <td>{formatDateAndTime(user.created_at)}</td>
                       <td style={{ textAlign: 'center' }}>

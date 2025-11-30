@@ -34,20 +34,52 @@ export const AuthProvider = ({ children }) => {
         if (isAuthenticated()) {
           // Có token, lấy thông tin user
           const profile = await getProfile()
+          
+          // Kiểm tra account status - nếu bị ban/suspended thì logout
+          if (profile.account_status === 'suspended' || profile.account_status === 'banned') {
+            logoutService()
+            setUser(null)
+            setError('Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.')
+            setLoading(false)
+            return
+          }
+          
           // Lấy role từ token vì profile API không trả về role
           const role = getRoleFromToken()
           setUser({ ...profile, role })
         }
       } catch (err) {
-        // Token không hợp lệ hoặc đã hết hạn
-        logoutService()
-        setUser(null)
+        // Kiểm tra nếu là lỗi 403 (account bị ban)
+        if (err.message && (err.message.includes('đình chỉ') || err.message.includes('bị tạm khóa') || err.message.includes('bị khóa'))) {
+          logoutService()
+          setUser(null)
+          setError(err.message)
+        } else {
+          // Token không hợp lệ hoặc đã hết hạn
+          logoutService()
+          setUser(null)
+        }
       } finally {
         setLoading(false)
       }
     }
 
     checkAuth()
+  }, [])
+
+  // Lắng nghe event khi account bị ban từ apiClient
+  useEffect(() => {
+    const handleAccountBanned = (event) => {
+      const { message } = event.detail
+      logoutService()
+      setUser(null)
+      setError(message || 'Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.')
+    }
+
+    window.addEventListener('account-banned', handleAccountBanned)
+    return () => {
+      window.removeEventListener('account-banned', handleAccountBanned)
+    }
   }, [])
 
   const login = async (credentials) => {
@@ -60,6 +92,14 @@ export const AuthProvider = ({ children }) => {
         setUser(response.user)
       } else {
         const profile = await getProfile()
+        
+        // Kiểm tra account status sau khi getProfile
+        if (profile.account_status === 'suspended' || profile.account_status === 'banned') {
+          logoutService()
+          setUser(null)
+          throw new Error('Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.')
+        }
+        
         const role = getRoleFromToken()
         setUser({ ...profile, role })
       }

@@ -55,6 +55,25 @@ export const apiClient = async (path, options = {}) => {
         }
       }
 
+      // Xử lý account bị ban/suspended (403)
+      if (response.status === 403) {
+        let errorMessage = 'Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.'
+        try {
+          const cloned = response.clone()
+          const errorData = await cloned.json()
+          errorMessage = errorData.message || errorMessage
+        } catch {
+          // Nếu không parse được JSON, dùng message mặc định
+        }
+        // Nếu có token, xóa token và trigger logout
+        if (token) {
+          localStorage.removeItem('token')
+          // Dispatch event để AuthContext có thể xử lý
+          window.dispatchEvent(new CustomEvent('account-banned', { detail: { message: errorMessage } }))
+        }
+        throw new Error(errorMessage)
+      }
+
       // Xử lý rate limit errors (429)
       if (response.status === 429) {
         let errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.'

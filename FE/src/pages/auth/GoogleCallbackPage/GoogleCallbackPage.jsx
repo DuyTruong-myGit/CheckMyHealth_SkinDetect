@@ -33,7 +33,7 @@ const GoogleCallbackPage = () => {
               errorMessage = 'Không tìm thấy thông tin người dùng.'
               break
             case 'account_suspended':
-              errorMessage = 'Tài khoản của bạn đã bị tạm khóa.'
+              errorMessage = 'Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.'
               break
             case 'token_failed':
               errorMessage = 'Lỗi tạo token. Vui lòng thử lại.'

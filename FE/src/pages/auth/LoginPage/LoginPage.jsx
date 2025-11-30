@@ -33,8 +33,13 @@ const LoginPage = () => {
       // Luôn redirect về trang home khi login để tránh giữ vị trí của user trước
       navigate('/', { replace: true })
     } catch (err) {
-      // Luôn hiển thị message chung để bảo mật
-      setError('Sai tên đăng nhập hoặc mật khẩu')
+      // Kiểm tra nếu là lỗi account bị ban/suspended (403)
+      if (err.message && (err.message.includes('đình chỉ') || err.message.includes('bị tạm khóa') || err.message.includes('bị khóa'))) {
+        setError(err.message)
+      } else {
+        // Luôn hiển thị message chung để bảo mật
+        setError('Sai tên đăng nhập hoặc mật khẩu')
+      }
     } finally {
       setLoading(false)
     }
@@ -58,7 +63,7 @@ const LoginPage = () => {
           errorMessage = 'Không tìm thấy thông tin người dùng.'
           break
         case 'account_suspended':
-          errorMessage = 'Tài khoản của bạn đã bị tạm khóa.'
+          errorMessage = 'Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.'
           break
         case 'token_failed':
           errorMessage = 'Lỗi tạo token. Vui lòng thử lại.'
