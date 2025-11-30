@@ -67,7 +67,11 @@ const authController = {
             if (!user) {
                 return res.status(401).json({ message: 'Sai tên đăng nhập hoặc mật khẩu.' });
             }
-
+            if (user.account_status === 'suspended' || user.account_status === 'banned') {
+                return res.status(403).json({ 
+                    message: 'Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.' 
+                });
+            }
             // 3. So sánh mật khẩu
             const isMatch = await bcrypt.compare(password, user.password_hash);
             if (!isMatch) {
