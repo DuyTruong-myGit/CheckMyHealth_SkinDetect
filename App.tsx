@@ -1,5 +1,4 @@
 import React from 'react';
-// QUAN TRỌNG: Dòng này bắt buộc phải có để App chạy được
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 

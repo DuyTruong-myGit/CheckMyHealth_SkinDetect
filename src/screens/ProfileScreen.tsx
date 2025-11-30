@@ -1,18 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Import Hook xử lý dữ liệu thật
 import { useDataSync } from '../hooks/useDataSync';
 
-const ProfileScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () => void }) => {
+const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const [deviceId, setDeviceId] = useState<string>('...');
-  
-  // Sử dụng Hook thật: Lấy trạng thái sync, tên user, và hàm syncData từ logic thực tế
   const { isSyncing, syncStatus, userName, syncData, resetLink } = useDataSync(deviceId);
 
   useEffect(() => {
     const getID = async () => {
-      // Lấy ID thiết bị thật (nếu có lưu) hoặc random
       let id = await AsyncStorage.getItem('MY_DEVICE_ID');
       if (!id) {
         id = Math.floor(Math.random() * 1000).toString();
@@ -23,12 +19,11 @@ const ProfileScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () =
     getID();
   }, []);
 
-  // Xử lý hiển thị thông báo khi đồng bộ xong
   useEffect(() => {
     if (syncStatus === 'SUCCESS') {
-      Alert.alert("Thành công", "Đã kết nối và đồng bộ dữ liệu lên Server!");
+      Alert.alert("Thành công", "Đã kết nối và đồng bộ dữ liệu!");
     } else if (syncStatus === 'ERROR') {
-      Alert.alert("Lỗi", "Không thể kết nối Server. Vui lòng kiểm tra Wifi/IP.");
+      Alert.alert("Lỗi", "Không thể kết nối Server. Kiểm tra mạng.");
     }
   }, [syncStatus]);
 
@@ -40,7 +35,6 @@ const ProfileScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () =
       >
         <Text style={styles.header}>HỒ SƠ THIẾT BỊ</Text>
         
-        {/* Vòng tròn ID: Xanh nếu đã có userName (đã kết nối), Xám nếu chưa */}
         <View style={[styles.idCircle, userName ? styles.idCircleLinked : {}]}>
           <Text style={styles.label}>ID KẾT NỐI</Text>
           <Text style={styles.idValue}>#{deviceId}</Text>
@@ -60,7 +54,6 @@ const ProfileScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () =
           )}
         </View>
 
-        {/* Nút bấm thực hiện hành động thật */}
         <TouchableOpacity 
           style={[styles.syncButton, isSyncing && styles.disabledBtn]} 
           onPress={syncData}
@@ -78,30 +71,31 @@ const ProfileScreen = ({ navigation, onBack }: { navigation?: any, onBack?: () =
           )}
         </TouchableOpacity>
 
-        {/* Nút hủy liên kết thật */}
         {userName && (
           <TouchableOpacity onPress={resetLink} style={styles.linkAction}>
-             <Text style={styles.linkActionText}>Đăng xuất / Hủy</Text>
+             <Text style={styles.linkActionText}>Hủy liên kết</Text>
           </TouchableOpacity>
         )}
-
-        <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={onBack || (() => navigation?.goBack())}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-        >
-          <Text style={styles.backText}>Quay lại</Text>
-        </TouchableOpacity>
         
-        <View style={{height: 50}} /> 
+        {/* Khoảng trống đệm để không bị nút quay lại che nội dung */}
+        <View style={{height: 60}} /> 
       </ScrollView>
+
+      {/* Nút Quay lại dạng thanh ngang (Fixed Bottom) */}
+      <TouchableOpacity 
+          style={styles.backBtn} 
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+      >
+        <Text style={styles.backText}>Quay lại</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   mainWrapper: { flex: 1, backgroundColor: '#E6F2FF' },
-  container: { alignItems: 'center', paddingTop: 15, paddingHorizontal: 10, paddingBottom: 40 },
+  container: { alignItems: 'center', paddingTop: 15, paddingHorizontal: 10 },
   header: { color: '#00509E', fontSize: 9, fontWeight: 'bold', marginBottom: 5, letterSpacing: 0.5 },
   
   idCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#E0E0E0', marginBottom: 5, elevation: 3 },
@@ -123,8 +117,20 @@ const styles = StyleSheet.create({
   linkAction: { marginBottom: 5 },
   linkActionText: { color: '#FF3B30', fontSize: 8, textDecorationLine: 'underline' },
 
-  backBtn: { paddingVertical: 6, paddingHorizontal: 25, backgroundColor: '#D0EBFF', borderRadius: 15, marginTop: 5, elevation: 1 },
-  backText: { color: '#003366', fontSize: 9, fontWeight: 'bold' },
+  // Style nút quay lại giống màn hình Sức khỏe
+  backBtn: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0,
+    paddingVertical: 10, 
+    alignItems: 'center', 
+    backgroundColor: '#D0EBFF', 
+    borderTopWidth: 1, 
+    borderTopColor: '#C1E1FF',
+    elevation: 5
+  },
+  backText: { color: '#003366', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
 });
 
 export default ProfileScreen;

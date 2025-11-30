@@ -8,11 +8,25 @@ const HistoryScreen = ({ navigation }: { navigation?: any }) => {
   useEffect(() => {
     const loadData = async () => {
       const records = await DataService.getRecords();
-      setData([...records]);
+      
+      // --- BỘ LỌC CHẶT CHẼ ---
+      const validRecords = records.filter(item => {
+        // 1. Loại bỏ timestamp rác (không có dấu /)
+        if (!item.timestamp || !item.timestamp.includes('/')) return false;
+        
+        // 2. Loại bỏ các bản ghi "rỗng" (tất cả chỉ số đều bằng 0)
+        if (item.type === 'WORKOUT' && (!item.steps || item.steps === 0)) return false;
+        if (item.type === 'HEALTH' && (!item.heartRate || item.heartRate === 0)) return false;
+        
+        return true;
+      });
+
+      setData([...validRecords]);
     };
     loadData();
   }, []);
 
+  // ... (Phần code giao diện bên dưới giữ nguyên như cũ) ...
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -29,7 +43,6 @@ const HistoryScreen = ({ navigation }: { navigation?: any }) => {
             data.map((item, index) => (
               <View key={index} style={[styles.historyItem, item.type === 'WORKOUT' ? styles.workoutBg : styles.healthBg]}>
                 
-                {/* Dòng tiêu đề: Thời gian + Loại */}
                 <View style={styles.itemHeader}>
                     <Text style={styles.dateText}>{item.timestamp}</Text>
                     <Text style={styles.typeText}>
@@ -39,10 +52,8 @@ const HistoryScreen = ({ navigation }: { navigation?: any }) => {
                 
                 <View style={styles.divider} />
 
-                {/* Nội dung chi tiết */}
                 <View style={styles.itemBody}>
                     {item.type === 'HEALTH' ? (
-                      // Hiển thị 3 chỉ số Sức khỏe
                       <View style={styles.statsRow}>
                           <View style={styles.statCol}>
                              <Text style={styles.icon}>❤️</Text>
@@ -58,7 +69,6 @@ const HistoryScreen = ({ navigation }: { navigation?: any }) => {
                           </View>
                       </View>
                     ) : (
-                      // Hiển thị 3 chỉ số Luyện tập
                       <View style={styles.statsRow}>
                           <View style={styles.statCol}>
                              <Text style={styles.icon}>👣</Text>
@@ -78,11 +88,9 @@ const HistoryScreen = ({ navigation }: { navigation?: any }) => {
               </View>
             ))
           )}
-          {/* View đệm để không bị che bởi nút quay lại */}
           <View style={{height: 40}} />
         </ScrollView>
 
-        {/* Nút Quay lại chuẩn style mới */}
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Text style={styles.backText}>Quay lại</Text>
         </TouchableOpacity>
@@ -101,7 +109,7 @@ const styles = StyleSheet.create({
   
   historyItem: { width: '100%', borderRadius: 8, padding: 6, marginBottom: 5, elevation: 1 },
   healthBg: { backgroundColor: '#FFF' },
-  workoutBg: { backgroundColor: '#FFF8E1' }, // Màu vàng nhạt cho luyện tập
+  workoutBg: { backgroundColor: '#FFF8E1' }, 
 
   itemHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
   dateText: { fontSize: 8, color: '#888' },
@@ -115,7 +123,7 @@ const styles = StyleSheet.create({
   
   icon: { fontSize: 10, marginBottom: 0 },
   val: { fontSize: 11, fontWeight: 'bold', color: '#333' },
-  valTime: { fontSize: 9, fontWeight: 'bold', color: '#333' }, // Font nhỏ hơn cho thời gian nếu dài
+  valTime: { fontSize: 9, fontWeight: 'bold', color: '#333' },
 
   emptyText: { fontSize: 10, color: '#999', fontStyle: 'italic', marginTop: 40 },
   

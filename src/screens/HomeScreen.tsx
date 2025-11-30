@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { DataService } from '../services/DataService';
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
-  const [showWarning, setShowWarning] = useState(false);
+  const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
   const checkHealthStatus = async () => {
     try {
@@ -11,14 +11,13 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
       const today = new Date();
       const statsToday = DataService.calculateDailyStats(records, today);
 
-      // Nếu chưa có dữ liệu gì (Nhịp tim = 0 và Bước chân = 0) thì hiện cảnh báo
       if (statsToday.avgHeartRate === 0 && statsToday.avgSteps === 0) {
-        setShowWarning(true);
+        setAlertMsg('⚠️ Chưa đo hôm nay');
       } else {
-        setShowWarning(false); // Đã đo rồi thì ẩn luôn
+        setAlertMsg(null);
       }
     } catch (e) {
-      setShowWarning(false);
+      setAlertMsg(null);
     }
   };
 
@@ -31,18 +30,18 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
     <View style={styles.container}>
       <View style={styles.card}>
         
+        <Text style={styles.appName}> CHECKMYHEALTH</Text>
         <Text style={styles.greetingText}>Xin chào,</Text>
-        <Text style={styles.appName}>CHECKMYHEALTH</Text>
         
-        {/* Chỉ hiện Box này khi chưa có dữ liệu */}
-        {showWarning && (
+        {/* Điều chỉnh phần này để không chiếm chỗ */}
+        {alertMsg ? (
             <View style={styles.alertBox}>
-                <Text style={styles.alertText}>⚠️ Chưa có dữ liệu hôm nay</Text>
+                <Text style={styles.alertText}>{alertMsg}</Text>
             </View>
+        ) : (
+            // [ĐÃ SỬA] Giảm chiều cao khoảng trống dự phòng từ 22 xuống 5
+            <View style={{height: 5, marginBottom: 2}} />
         )}
-
-        {/* Thêm khoảng trống nếu không có thông báo để layout cân đối */}
-        {!showWarning && <View style={{height: 10}} />}
 
         <View style={styles.gridContainer}>
             <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('HealthMeasure')}>
@@ -83,18 +82,24 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
-  card: { width: 192, height: 192, borderRadius: 96, backgroundColor: '#E6F7FF', alignItems: 'center', paddingTop: 10, overflow: 'hidden' },
-  greetingText: { fontSize: 8, color: '#666', marginBottom: 0 },
-  appName: { fontSize: 11, fontWeight: '900', color: '#003366', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
   
-  // Style cảnh báo màu vàng
-  alertBox: { width: '80%', paddingVertical: 2, borderRadius: 4, marginBottom: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF3CD' },
-  alertText: { fontSize: 8, color: '#856404', fontWeight: '600' },
+  // [ĐÃ SỬA] Giảm paddingTop từ 15 xuống 8 để kéo nội dung lên
+  card: { width: 192, height: 192, borderRadius: 96, backgroundColor: '#E6F7FF', alignItems: 'center', paddingTop: 8, overflow: 'hidden' },
+  
+  appName: { fontSize: 11, fontWeight: '900', color: '#003366', marginBottom: 0, textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+  // [ĐÃ SỬA] Giảm marginBottom từ 4 xuống 2
+  greetingText: { fontSize: 9, color: '#666', marginBottom: 2, fontStyle: 'italic' },
 
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', width: '90%' },
-  gridItem: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', margin: 3, elevation: 3 },
+  alertBox: { width: '80%', paddingVertical: 2, borderRadius: 4, marginBottom: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#DDD' },
+  alertText: { fontSize: 8, color: '#333', fontWeight: '600' },
+
+  // [ĐÃ SỬA] Thêm marginTop âm nhỏ để kéo lưới lên một chút nếu cần thiết
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', width: '90%', marginTop: -2 },
+  
+  gridItem: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', margin: 3, elevation: 2 },
   icon: { fontSize: 16, marginBottom: 0 },
-  menuText: { fontSize: 7, fontWeight: 'bold', color: '#333', marginTop: 0 }
+  menuText: { fontSize: 7, fontWeight: 'bold', color: '#333', marginTop: 0 },
 });
 
 export default HomeScreen;
