@@ -1,45 +1,38 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 
-const createTransporter = () => {
-    return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        },
-        tls: {
-            rejectUnauthorized: false
-        },
-        // --- QUAN TRỌNG: CÁC DÒNG DƯỚI ĐÂY GIÚP FIX LỖI TIMEOUT ---
-        // Ép buộc sử dụng IPv4 (nhiều server cloud bị lỗi timeout với IPv6)
-        family: 4, 
-        // Tăng thời gian chờ kết nối
-        connectionTimeout: 10000, // 10 giây
-        greetingTimeout: 5000,
-        socketTimeout: 10000
-    });
-};
-
-const transporter = createTransporter();
+// Khởi tạo Resend với API Key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, html) => {
     try {
-        console.log(`⏳ Đang gửi email tới ${to}...`);
-        const info = await transporter.sendMail({
-            from: `"CheckMyHealth App" <${process.env.EMAIL_USER}>`,
-            to: to,
+        console.log(`⏳ Đang gửi email tới ${to} qua Resend API...`);
+
+        // CẤU HÌNH QUAN TRỌNG VỀ NGƯỜI GỬI (FROM)
+        // Trường hợp 1: Nếu CHƯA có tên miền riêng (Chỉ test được gửi cho chính mình)
+        const fromEmail = 'onboarding@resend.dev';
+        
+        // Trường hợp 2: Nếu ĐÃ mua tên miền và verify trên Resend (Gửi được cho mọi người)
+        // const fromEmail = 'CheckMyHealth <noreply@tên_miền_của_bạn.com>';
+
+        const data = await resend.emails.send({
+            from: fromEmail,
+            to: to, 
             subject: subject,
             html: html
         });
-        console.log(`✅ Email sent: ${info.messageId}`);
-        return info;
+
+        if (data.error) {
+            console.error('❌ Resend Error:', data.error);
+            // Trả về null để không crash app
+            return null; 
+        }
+
+        console.log(`✅ Email sent successfully! ID: ${data.data.id}`);
+        return data;
     } catch (error) {
-        console.error('❌ Error sending email:', error);
-        // Không ném lỗi chết app, chỉ log ra để server vẫn chạy
-        return null; 
+        console.error('❌ Error sending email:', error.message);
+        return null;
     }
 };
 
