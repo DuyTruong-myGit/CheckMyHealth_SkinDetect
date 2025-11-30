@@ -254,6 +254,7 @@
 .site-nav__dropdown-menu .site-nav__link:hover {
   background: rgba(0, 102, 204, 0.05);
   padding-left: 24px;
+  color: var(--color-text-primary); /* Giữ màu đen khi hover */
 }
 
 .site-nav__dropdown-menu .site-nav__link:hover::before {
