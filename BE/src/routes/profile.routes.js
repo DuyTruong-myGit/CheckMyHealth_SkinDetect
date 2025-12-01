@@ -319,4 +319,7 @@ router.put('/password', authMiddleware, async (req, res) => {
     }
 });
 
+
+router.put('/fcm-token', authMiddleware, profileController.updateFcmToken);
+
 module.exports = router;
