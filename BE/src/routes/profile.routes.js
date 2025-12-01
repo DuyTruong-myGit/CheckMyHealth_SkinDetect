@@ -320,7 +320,60 @@ router.put('/password', authMiddleware, async (req, res) => {
     }
 });
 
-
+/**
+ * @swagger
+ * /api/profile/fcm-token:
+ *   put:
+ *     summary: Cập nhật FCM token cho push notifications
+ *     description: Lưu FCM token của người dùng để backend có thể gửi push notifications qua Firebase Cloud Messaging
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fcmToken
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *                 description: FCM token từ Firebase SDK hoặc token identifier
+ *                 example: "web_dGVzdF90b2tlbg==_1234567890"
+ *     responses:
+ *       200:
+ *         description: Cập nhật FCM token thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Đã cập nhật token"
+ *       400:
+ *         description: Thiếu FCM token hoặc dữ liệu không hợp lệ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               message: "Thiếu token"
+ *       401:
+ *         description: Không có quyền truy cập
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Lỗi máy chủ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.put('/fcm-token', authMiddleware, profileController.updateFcmToken);
 
 module.exports = router;
