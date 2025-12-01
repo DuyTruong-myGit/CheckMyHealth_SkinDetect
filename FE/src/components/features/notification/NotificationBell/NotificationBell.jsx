@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../../../../contexts/AuthContext.jsx'
 import notificationService from '../../../../services/features/notificationService.js'
 import { setupNotificationListeners } from '../../../../utils/notifications.js'
@@ -10,6 +10,36 @@ const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef(null)
+  const loadingRef = useRef(false) // Prevent concurrent loads
+  const debounceTimerRef = useRef(null) // Debounce timer
+
+  // Debounced loadNotifications để tránh gọi nhiều lần cùng lúc
+  const loadNotifications = useCallback(async () => {
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Debounce: đợi 300ms trước khi thực sự load
+    debounceTimerRef.current = setTimeout(async () => {
+      // Prevent concurrent loads
+      if (loadingRef.current) {
+        return
+      }
+
+      try {
+        loadingRef.current = true
+        setLoading(true)
+        const data = await notificationService.getAll()
+        setNotifications(data || [])
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+      } finally {
+        setLoading(false)
+        loadingRef.current = false
+      }
+    }, 300)
+  }, [])
 
   // Polling và setup listeners
   useEffect(() => {
@@ -40,17 +70,15 @@ const NotificationBell = () => {
       // Khi nhận được push message từ Firebase
       onMessage: (payload) => {
         console.log('📬 Received push notification, refreshing...')
-        // Refresh ngay lập tức
+        // Refresh ngay lập tức (debounced)
         loadNotifications()
       },
       // Khi user click vào browser notification
       onClick: () => {
         console.log('🔔 Notification clicked, refreshing...')
         loadNotifications()
-        // Mở dropdown nếu chưa mở
-        if (!isOpen) {
-          setIsOpen(true)
-        }
+        // Mở dropdown nếu chưa mở (sử dụng functional update để tránh stale closure)
+        setIsOpen(prev => !prev ? true : prev)
       },
       // Khi có custom refresh event
       onRefresh: () => {
@@ -69,11 +97,14 @@ const NotificationBell = () => {
       if (intervalId) {
         clearInterval(intervalId)
       }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
       if (cleanup) {
         cleanup()
       }
     }
-  }, [isAuthenticated, isOpen])
+  }, [isAuthenticated, loadNotifications]) // Removed isOpen from dependencies
 
   // Refresh khi click vào bell
   const handleBellClick = () => {
@@ -97,17 +128,6 @@ const NotificationBell = () => {
     }
   }, [isOpen])
 
-  const loadNotifications = async () => {
-    try {
-      setLoading(true)
-      const data = await notificationService.getAll()
-      setNotifications(data || [])
-    } catch (error) {
-      console.error('Error loading notifications:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 

@@ -102,6 +102,36 @@ const getDbDay = (jsDay) => {
     return jsDay === 0 ? 8 : jsDay + 1;
 };
 
+/**
+ * Kiểm tra xem token có phải là FCM token hợp lệ không
+ * FCM token thường có format: dài (100+ ký tự), không bắt đầu bằng "web_"
+ * @param {string} token - Token cần kiểm tra
+ * @returns {boolean} true nếu là FCM token hợp lệ
+ */
+const isValidFcmToken = (token) => {
+    if (!token || typeof token !== 'string') {
+        return false;
+    }
+    
+    // Token identifier đơn giản từ web thường bắt đầu bằng "web_"
+    if (token.startsWith('web_')) {
+        return false;
+    }
+    
+    // FCM token thường dài hơn 100 ký tự và có format đặc biệt
+    // Token hợp lệ thường có độ dài từ 140-200 ký tự
+    if (token.length < 100) {
+        return false;
+    }
+    
+    // FCM token thường chứa các ký tự đặc biệt và không có khoảng trắng
+    if (token.includes(' ')) {
+        return false;
+    }
+    
+    return true;
+};
+
 const initScheduledJobs = () => {
     // Chạy mỗi phút
     cron.schedule('* * * * *', async () => {
@@ -141,13 +171,14 @@ const initScheduledJobs = () => {
                     const title = `Đến giờ: ${schedule.title}`;
                     const message = `Đã đến giờ cho hoạt động ${schedule.type}.`;
                     
-                    // Kiểm tra xem trong 10 phút gần đây đã có thông báo y hệt cho user này chưa
+                    // Kiểm tra xem trong 5 phút gần đây đã có thông báo y hệt cho user này chưa
+                    // Giảm từ 10 phút xuống 5 phút để tránh duplicate tốt hơn
                     const [duplicates] = await pool.query(`
                         SELECT notification_id FROM notifications 
                         WHERE user_id = ? 
                         AND title = ? 
                         AND message = ?
-                        AND created_at > (NOW() - INTERVAL 10 MINUTE)
+                        AND created_at > (NOW() - INTERVAL 5 MINUTE)
                     `, [schedule.user_id, title, message]);
 
                     // Nếu đã có rồi -> Bỏ qua (Continue), không tạo nữa
@@ -159,7 +190,8 @@ const initScheduledJobs = () => {
                     await notificationModel.create(schedule.user_id, title, message);
 
                     // 2. GỬI PUSH NOTIFICATION (FCM)
-                    if (schedule.fcm_token) {
+                    // Chỉ gửi nếu có token VÀ token là FCM token hợp lệ (không phải web_xxx identifier)
+                    if (schedule.fcm_token && isValidFcmToken(schedule.fcm_token)) {
                         try {
                             await admin.messaging().send({
                                 token: schedule.fcm_token,
@@ -186,8 +218,24 @@ const initScheduledJobs = () => {
                             console.log(`✅ FCM sent to user ${schedule.user_id}`);
                         } catch (fcmError) {
                             console.error(`❌ FCM Failed for user ${schedule.user_id}:`, fcmError.message);
-                            // Nếu token lỗi (user đổi máy/gỡ app), có thể set fcm_token = NULL
+                            
+                            // Nếu token lỗi (invalid token, user đổi máy/gỡ app), set fcm_token = NULL
+                            if (fcmError.code === 'messaging/invalid-registration-token' || 
+                                fcmError.code === 'messaging/registration-token-not-registered') {
+                                try {
+                                    await pool.query(
+                                        'UPDATE users SET fcm_token = NULL WHERE user_id = ?',
+                                        [schedule.user_id]
+                                    );
+                                    console.log(`🧹 Đã xóa FCM token không hợp lệ cho user ${schedule.user_id}`);
+                                } catch (updateError) {
+                                    console.error(`❌ Lỗi khi xóa FCM token:`, updateError.message);
+                                }
+                            }
                         }
+                    } else if (schedule.fcm_token) {
+                        // Token tồn tại nhưng không phải FCM token hợp lệ (có thể là web_xxx identifier)
+                        console.log(`⚠️ Bỏ qua FCM cho user ${schedule.user_id}: Token không phải FCM token hợp lệ (có thể là web identifier)`);
                     }
                 }
             }
