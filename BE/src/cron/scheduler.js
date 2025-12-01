@@ -141,6 +141,20 @@ const initScheduledJobs = () => {
                     const title = `Đến giờ: ${schedule.title}`;
                     const message = `Đã đến giờ cho hoạt động ${schedule.type}.`;
                     
+                    // Kiểm tra xem trong 10 phút gần đây đã có thông báo y hệt cho user này chưa
+                    const [duplicates] = await pool.query(`
+                        SELECT notification_id FROM notifications 
+                        WHERE user_id = ? 
+                        AND title = ? 
+                        AND message = ?
+                        AND created_at > (NOW() - INTERVAL 10 MINUTE)
+                    `, [schedule.user_id, title, message]);
+
+                    // Nếu đã có rồi -> Bỏ qua (Continue), không tạo nữa
+                    if (duplicates.length > 0) {
+                        console.log(`⚠️ Bỏ qua thông báo trùng lặp cho User ${schedule.user_id}: ${title}`);
+                        continue; 
+                    }
                     // 1. Lưu vào DB (để hiển thị trong trang Thông báo của App)
                     await notificationModel.create(schedule.user_id, title, message);
 
