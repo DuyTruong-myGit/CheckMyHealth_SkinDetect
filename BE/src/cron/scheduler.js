@@ -64,9 +64,28 @@ const admin = require('firebase-admin');
 const serviceAccount = require('../firebase-admin-key.json'); 
 
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
+    let serviceAccount;
+
+    // Kiểm tra xem đang chạy trên Render (có biến môi trường) hay Local
+    if (process.env.FIREBASE_CREDENTIALS) {
+        // Nếu có biến môi trường (Render), parse JSON từ string
+        serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+    } else {
+        // Nếu chạy local, thử đọc file (nhớ bỏ vào gitignore)
+        // Dùng try-catch để tránh lỗi nếu quên file
+        try {
+            serviceAccount = require('../firebase-admin-key.json');
+        } catch (e) {
+            console.error('❌ Không tìm thấy file firebase-admin-key.json và không có biến FIREBASE_CREDENTIALS');
+        }
+    }
+
+    if (serviceAccount) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log("🔥 Firebase Admin Initialized successfully!");
+    }
 }
 
 const getDbDay = (jsDay) => {
