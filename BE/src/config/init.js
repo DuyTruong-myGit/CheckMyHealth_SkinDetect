@@ -1,7 +1,7 @@
 const { pool } = require('./db');
 
 /**
- * Tạo bảng news_sources nếu chưa tồn tại
+ * Tạo bảng và cập nhật cấu trúc DB nếu thiếu
  * Được gọi tự động khi backend start
  */
 const initializeDatabase = async () => {
@@ -9,7 +9,7 @@ const initializeDatabase = async () => {
   try {
     connection = await pool.getConnection();
 
-    // Tạo bảng news_sources
+    // 1. Tạo bảng news_sources (Giữ nguyên logic cũ)
     await connection.query(`
       CREATE TABLE IF NOT EXISTS news_sources (
         source_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -18,10 +18,25 @@ const initializeDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
     console.log('✅ news_sources table checked/created');
 
-    // Kiểm tra bảng watch_measurements (bảng đã được tạo sẵn trong DB)
+    // 2. [QUAN TRỌNG] Kiểm tra và thêm cột fcm_token vào bảng users
+    try {
+      // Thử select cột fcm_token
+      await connection.query('SELECT fcm_token FROM users LIMIT 1');
+    } catch (err) {
+      // Nếu lỗi là 1054 (Unknown column), tiến hành thêm cột
+      if (err.errno === 1054) {
+        console.log('⚠️ Cột fcm_token chưa tồn tại trong bảng users. Đang thêm mới...');
+        await connection.query('ALTER TABLE users ADD COLUMN fcm_token VARCHAR(255) DEFAULT NULL');
+        console.log('✅ Đã thêm cột fcm_token thành công!');
+      } else {
+        // Nếu là lỗi khác thì ném ra ngoài
+        throw err;
+      }
+    }
+
+    // 3. Kiểm tra bảng watch_measurements (Giữ nguyên logic cũ)
     const [watchTableExists] = await connection.query(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
@@ -34,6 +49,7 @@ const initializeDatabase = async () => {
     } else {
       console.warn('⚠️ watch_measurements table not found - please create it manually');
     }
+
   } catch (error) {
     console.error('❌ Error initializing database:', error.message);
     throw error;
