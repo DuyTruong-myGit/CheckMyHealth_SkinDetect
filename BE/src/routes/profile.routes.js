@@ -4,6 +4,7 @@ const { authMiddleware } = require('../middleware/auth.middleware');
 const userModel = require('../models/user.model');
 const uploadCloud = require('../config/cloudinary');
 const bcrypt = require('bcryptjs');
+const profileController = require('../controllers/profile.controller');
 /**
  * @swagger
  * /api/profile:
