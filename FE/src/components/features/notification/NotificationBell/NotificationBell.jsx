@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../../../contexts/AuthContext.jsx'
 import notificationService from '../../../../services/features/notificationService.js'
+import { setupNotificationListeners } from '../../../../utils/notifications.js'
 import './NotificationBell.css'
 
 const NotificationBell = () => {
@@ -10,14 +11,69 @@ const NotificationBell = () => {
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef(null)
 
+  // Polling và setup listeners
   useEffect(() => {
-    if (isAuthenticated) {
-      loadNotifications()
-      // Refresh notifications mỗi 30 giây
-      const interval = setInterval(loadNotifications, 30000)
-      return () => clearInterval(interval)
+    if (!isAuthenticated) return
+
+    // Load notifications ngay lập tức
+    loadNotifications()
+
+    // Polling interval - giảm xuống 20 giây để responsive hơn
+    // Chỉ poll khi tab đang visible (tiết kiệm tài nguyên)
+    let intervalId = null
+    
+    const startPolling = () => {
+      if (document.visibilityState === 'visible') {
+        intervalId = setInterval(() => {
+          // Chỉ poll nếu tab đang visible
+          if (document.visibilityState === 'visible') {
+            loadNotifications()
+          }
+        }, 20000) // 20 giây
+      }
     }
-  }, [isAuthenticated])
+
+    startPolling()
+
+    // Setup notification listeners để tự động refresh khi nhận push notification
+    const cleanup = setupNotificationListeners({
+      // Khi nhận được push message từ Firebase
+      onMessage: (payload) => {
+        console.log('📬 Received push notification, refreshing...')
+        // Refresh ngay lập tức
+        loadNotifications()
+      },
+      // Khi user click vào browser notification
+      onClick: () => {
+        console.log('🔔 Notification clicked, refreshing...')
+        loadNotifications()
+        // Mở dropdown nếu chưa mở
+        if (!isOpen) {
+          setIsOpen(true)
+        }
+      },
+      // Khi có custom refresh event
+      onRefresh: () => {
+        console.log('🔄 Manual refresh triggered')
+        loadNotifications()
+      },
+      // Khi tab được focus lại (user quay lại tab)
+      onVisibilityChange: () => {
+        console.log('👁️ Tab visible, refreshing notifications...')
+        loadNotifications()
+      }
+    })
+
+    // Cleanup khi component unmount hoặc isAuthenticated thay đổi
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      if (cleanup) {
+        cleanup()
+      }
+    }
+  }, [isAuthenticated, isOpen])
 
   // Refresh khi click vào bell
   const handleBellClick = () => {

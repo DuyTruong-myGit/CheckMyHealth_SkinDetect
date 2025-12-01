@@ -1,8 +1,9 @@
 /* @refresh reset */
 import { createContext, useContext, useState, useEffect } from 'react'
 import { login as loginService, logout as logoutService, register as registerService, isAuthenticated, getToken } from '../services/auth/authService.js'
-import { getProfile } from '../services/features/profileService.js'
+import { getProfile, updateFcmToken } from '../services/features/profileService.js'
 import { decodeToken } from '../utils/jwt.js'
+import { initializeNotifications } from '../utils/notifications.js'
 
 const AuthContext = createContext(null)
 
@@ -47,6 +48,18 @@ export const AuthProvider = ({ children }) => {
           // Lấy role từ token vì profile API không trả về role
           const role = getRoleFromToken()
           setUser({ ...profile, role })
+
+          // Khởi tạo và gửi FCM token cho notifications
+          try {
+            const fcmToken = await initializeNotifications()
+            if (fcmToken) {
+              await updateFcmToken(fcmToken)
+              console.log('✅ FCM token đã được cập nhật')
+            }
+          } catch (fcmError) {
+            // Không block nếu FCM token lỗi
+            console.warn('⚠️ Không thể cập nhật FCM token:', fcmError.message)
+          }
         }
       } catch (err) {
         // Kiểm tra nếu là lỗi 403 (account bị ban)
@@ -103,6 +116,19 @@ export const AuthProvider = ({ children }) => {
         const role = getRoleFromToken()
         setUser({ ...profile, role })
       }
+
+      // Khởi tạo và gửi FCM token sau khi đăng nhập thành công
+      try {
+        const fcmToken = await initializeNotifications()
+        if (fcmToken) {
+          await updateFcmToken(fcmToken)
+          console.log('✅ FCM token đã được cập nhật sau khi đăng nhập')
+        }
+      } catch (fcmError) {
+        // Không block nếu FCM token lỗi
+        console.warn('⚠️ Không thể cập nhật FCM token:', fcmError.message)
+      }
+
       return response
     } catch (err) {
       setError(err.message)

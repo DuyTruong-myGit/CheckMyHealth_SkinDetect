@@ -358,6 +358,23 @@ const userModel = {
         }
     },
 
+
+    /**
+     * Cập nhật FCM Token cho user
+     */
+    updateFcmToken: async (userId, token) => {
+        try {
+            await pool.query(
+                'UPDATE users SET fcm_token = ? WHERE user_id = ?',
+                [token, userId]
+            );
+            return true;
+        } catch (error) {
+            console.error('Error updating FCM token:', error);
+            throw error;
+        }
+    },
+
 };
 
 module.exports = userModel;

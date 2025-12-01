@@ -4,6 +4,7 @@ const { authMiddleware } = require('../middleware/auth.middleware');
 const userModel = require('../models/user.model');
 const uploadCloud = require('../config/cloudinary');
 const bcrypt = require('bcryptjs');
+const profileController = require('../controllers/profile.controller');
 /**
  * @swagger
  * /api/profile:
@@ -318,5 +319,8 @@ router.put('/password', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
     }
 });
+
+
+router.put('/fcm-token', authMiddleware, profileController.updateFcmToken);
 
 module.exports = router;

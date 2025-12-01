@@ -86,3 +86,22 @@ export const changePassword = async (passwordData) => {
   }
 }
 
+/**
+ * Cập nhật FCM token cho người dùng
+ * @param {string} fcmToken - FCM token từ browser
+ * @returns {Promise<Object>} Kết quả cập nhật
+ */
+export const updateFcmToken = async (fcmToken) => {
+  try {
+    const response = await apiClient('/api/profile/fcm-token', {
+      method: 'PUT',
+      body: JSON.stringify({ fcmToken }),
+    })
+    return response
+  } catch (error) {
+    if (error.message.includes('401') || error.message.includes('hết hạn')) {
+      throw error
+    }
+    throw new Error(error.message || 'Không thể cập nhật FCM token')
+  }
+}
