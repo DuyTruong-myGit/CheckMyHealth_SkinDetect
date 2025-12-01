@@ -61,7 +61,7 @@ const admin = require('firebase-admin');
 
 // 1. KHỞI TẠO FIREBASE ADMIN
 // Đảm bảo file firebase-admin-key.json nằm cùng cấp hoặc đúng đường dẫn
-const serviceAccount = require('../firebase-admin-key.json'); 
+// const serviceAccount = require('../firebase-admin-key.json'); 
 
 if (!admin.apps.length) {
     let serviceAccount = null;
