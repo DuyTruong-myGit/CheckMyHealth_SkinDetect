@@ -181,6 +181,13 @@ const SiteHeader = ({ variant = 'site' }) => {
                       Lịch trình
                     </NavLink>
                     <NavLink
+                      to="/watch-activity"
+                      className={buildLinkClass}
+                      onClick={() => setUtilitiesMenuOpen(false)}
+                    >
+                      Lịch sử hoạt động
+                    </NavLink>
+                    <NavLink
                       to="/map"
                       className={buildLinkClass}
                       onClick={() => setUtilitiesMenuOpen(false)}

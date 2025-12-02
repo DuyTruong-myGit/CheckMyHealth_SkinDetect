@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { API_BASE_URL } from '../../../config/api.js'
 
 const SiteFooter = () => {
@@ -40,7 +41,10 @@ const SiteFooter = () => {
   return (
     <footer className="site-footer">
       <div className="site-footer__inner">
-        <p>&copy; {new Date().getFullYear()} SkinCare Platform</p>
+        <p>&copy; {new Date().getFullYear()} CheckMyHealth</p>
+        <p>
+          <Link to="/about">Về chúng tôi</Link> · <Link to="/faq">FAQ</Link>
+        </p>
         <p className="site-footer__api-hint">{getStatusText()}</p>
       </div>
     </footer>

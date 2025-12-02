@@ -14,6 +14,8 @@ import HomePage from './pages/public/HomePage/HomePage.jsx'
 import NewsPage from './pages/public/NewsPage/NewsPage.jsx'
 import DiseasesPage from './pages/public/DiseasesPage/DiseasesPage.jsx'
 import DiseaseDetailPage from './pages/public/DiseaseDetailPage/DiseaseDetailPage.jsx'
+import AboutPage from './pages/public/AboutPage/AboutPage.jsx'
+import FAQPage from './pages/public/FAQPage/FAQPage.jsx'
 
 // User pages
 import DiagnosisPage from './pages/user/DiagnosisPage/DiagnosisPage.jsx'
@@ -23,6 +25,7 @@ import ChatPage from './pages/user/ChatPage/ChatPage.jsx'
 import SchedulePage from './pages/user/SchedulePage/SchedulePage.jsx'
 import FeedbackPage from './pages/user/FeedbackPage/FeedbackPage.jsx'
 import MapPage from './pages/user/MapPage/MapPage.jsx'
+import WatchActivityPage from './pages/user/WatchActivityPage/WatchActivityPage.jsx'
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard/AdminDashboard.jsx'
@@ -58,6 +61,8 @@ function App() {
           } 
         />
         <Route path="/news" element={<NewsPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/faq" element={<FAQPage />} />
         <Route 
           path="/history" 
           element={
@@ -97,6 +102,14 @@ function App() {
           element={
             <ProtectedRoute>
               <FeedbackPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/watch-activity"
+          element={
+            <ProtectedRoute>
+              <WatchActivityPage />
             </ProtectedRoute>
           }
         />
