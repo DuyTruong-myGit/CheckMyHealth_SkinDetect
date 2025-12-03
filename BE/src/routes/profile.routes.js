@@ -32,6 +32,23 @@ const profileController = require('../controllers/profile.controller');
  *                   type: string
  *                   enum: [local, google]
  *                   description: Phương thức đăng nhập
+ *                 role:
+ *                   type: string
+ *                   enum: [user, admin]
+ *                   description: Quyền của người dùng
+ *                 avatar_url:
+ *                   type: string
+ *                   format: uri
+ *                   nullable: true
+ *                   description: URL ảnh đại diện (có thể null)
+ *                 watchDeviceId:
+ *                   type: string
+ *                   nullable: true
+ *                   description: ID đồng hồ đã ghép đôi (nếu có)
+ *                 account_status:
+ *                   type: string
+ *                   enum: [active, suspended, banned]
+ *                   description: Trạng thái tài khoản
  *       401:
  *         description: Không có quyền truy cập
  *         content:
@@ -65,7 +82,8 @@ router.get('/', authMiddleware, async (req, res) => {
             fullName: user.full_name,
             provider: user.provider,
             role: user.role,
-            avatar_url: user.avatar_url 
+            avatar_url: user.avatar_url,
+            watchDeviceId: user.watch_device_id
         });
 
     } catch (error) {
@@ -324,8 +342,7 @@ router.put('/password', authMiddleware, async (req, res) => {
  * @swagger
  * /api/profile/fcm-token:
  *   put:
- *     summary: Cập nhật FCM token cho push notifications
- *     description: Lưu FCM token của người dùng để backend có thể gửi push notifications qua Firebase Cloud Messaging
+ *     summary: Cập nhật FCM token cho người dùng
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
@@ -340,8 +357,7 @@ router.put('/password', authMiddleware, async (req, res) => {
  *             properties:
  *               fcmToken:
  *                 type: string
- *                 description: FCM token từ Firebase SDK hoặc token identifier
- *                 example: "web_dGVzdF90b2tlbg==_1234567890"
+ *                 description: FCM token từ browser/client
  *     responses:
  *       200:
  *         description: Cập nhật FCM token thành công
@@ -352,27 +368,13 @@ router.put('/password', authMiddleware, async (req, res) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Đã cập nhật token"
+ *                   example: "FCM token updated"
  *       400:
- *         description: Thiếu FCM token hoặc dữ liệu không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               message: "Thiếu token"
+ *         description: Thiếu hoặc FCM token không hợp lệ
  *       401:
  *         description: Không có quyền truy cập
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Lỗi máy chủ
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.put('/fcm-token', authMiddleware, profileController.updateFcmToken);
 

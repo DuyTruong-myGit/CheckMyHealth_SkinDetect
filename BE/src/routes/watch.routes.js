@@ -502,6 +502,97 @@ router.get('/measurements/:id', authMiddleware, watchController.getById);
  */
 router.delete('/measurements/:id', authMiddleware, watchController.deleteMeasurement);
 
+/**
+ * @swagger
+ * /api/watch/link:
+ *   post:
+ *     summary: Liên kết tài khoản người dùng với đồng hồ (Watch Device)
+ *     description: Dùng trong mobile app hoặc web app khi người dùng ghép đôi đồng hồ với tài khoản.
+ *     tags: [Watch]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - deviceId
+ *             properties:
+ *               deviceId:
+ *                 type: string
+ *                 description: ID cố định của đồng hồ (do app/watch cung cấp)
+ *                 example: "WATCH-ABC-123"
+ *     responses:
+ *       200:
+ *         description: Ghép đôi thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Ghép đôi thành công!"
+ *       400:
+ *         description: Thiếu deviceId hoặc dữ liệu không hợp lệ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Không có quyền truy cập (thiếu/sai token user)
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.post('/link', authMiddleware, watchController.linkDevice);
+
+/**
+ * @swagger
+ * /api/watch/status/{deviceId}:
+ *   get:
+ *     summary: Kiểm tra trạng thái ghép đôi của đồng hồ
+ *     description: Dùng trong Watch App. Không yêu cầu JWT vì đồng hồ chưa có token ở bước đầu.
+ *     tags: [Watch]
+ *     parameters:
+ *       - in: path
+ *         name: deviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID cố định của đồng hồ
+ *     responses:
+ *       200:
+ *         description: Trạng thái ghép đôi của đồng hồ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [PENDING, LINKED]
+ *                   example: "LINKED"
+ *                 token:
+ *                   type: string
+ *                   nullable: true
+ *                   description: JWT token cho đồng hồ (chỉ có khi status = LINKED)
+ *                 user:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     fullName:
+ *                       type: string
+ *                       example: "Nguyễn Văn A"
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *       500:
+ *         description: Lỗi máy chủ
+ */
+router.get('/status/:deviceId', watchController.checkDeviceStatus);
+
 
 module.exports = router;
 

@@ -375,6 +375,44 @@ const userModel = {
         }
     },
 
+
+
+    /**
+     * [MỚI] Cập nhật Watch Device ID cho user (Dùng khi ghép đôi)
+     */
+    updateWatchId: async (userId, deviceId) => {
+        try {
+            // Trước tiên, xóa deviceId này khỏi các user khác (nếu có) để đảm bảo UNIQUE
+            await pool.query('UPDATE users SET watch_device_id = NULL WHERE watch_device_id = ?', [deviceId]);
+            
+            // Cập nhật cho user hiện tại
+            await pool.query(
+                'UPDATE users SET watch_device_id = ? WHERE user_id = ?',
+                [deviceId, userId]
+            );
+            return true;
+        } catch (error) {
+            console.error('Error updating watch device id:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * [MỚI] Tìm user sở hữu deviceId này
+     */
+    findByWatchId: async (deviceId) => {
+        try {
+            const [rows] = await pool.query(
+                'SELECT * FROM users WHERE watch_device_id = ?',
+                [deviceId]
+            );
+            return rows[0];
+        } catch (error) {
+            console.error('Error finding user by watch id:', error);
+            throw error;
+        }
+    }
+
 };
 
 module.exports = userModel;

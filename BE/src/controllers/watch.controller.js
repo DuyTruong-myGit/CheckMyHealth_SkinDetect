@@ -1,4 +1,6 @@
 const watchModel = require('../models/watch.model');
+const userModel = require('../models/user.model'); // [MỚI] Import userModel
+const jwt = require('jsonwebtoken'); // [MỚI] Import JWT
 
 const watchController = {
     /**
@@ -196,6 +198,87 @@ const watchController = {
         } catch (error) {
             console.error('Error fetching stats:', error);
             res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+
+
+
+
+
+
+
+
+
+    /**
+     * [MỚI] API cho MOBILE APP: Liên kết tài khoản với ID đồng hồ
+     * POST /api/watch/link
+     * Body: { "deviceId": "12345" }
+     */
+    linkDevice: async (req, res) => {
+        try {
+            const { deviceId } = req.body;
+            const userId = req.user.userId; // Lấy từ token của người dùng trên điện thoại
+
+            if (!deviceId) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp Device ID của đồng hồ.' });
+            }
+
+            await userModel.updateWatchId(userId, deviceId);
+            
+            console.log(`🔗 User ${userId} đã liên kết với Watch ID: ${deviceId}`);
+            res.status(200).json({ message: 'Ghép đôi thành công!' });
+        } catch (error) {
+            console.error('Link device error:', error);
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
+    },
+
+    /**
+     * [MỚI] API cho WATCH APP: Kiểm tra xem mình đã được liên kết chưa
+     * GET /api/watch/status/:deviceId
+     * (Không cần Auth Middleware vì lúc đầu Watch chưa có Token)
+     */
+    checkDeviceStatus: async (req, res) => {
+        try {
+            const { deviceId } = req.params;
+
+            // Tìm xem có user nào đang sở hữu deviceId này không
+            const user = await userModel.findByWatchId(deviceId);
+
+            if (!user) {
+                // Chưa ai liên kết
+                return res.status(200).json({ status: 'PENDING', message: 'Chờ ghép đôi...' });
+            }
+
+            // Đã tìm thấy chủ nhân! Tạo Token riêng cho Watch
+            const payload = {
+                userId: user.user_id,
+                email: user.email,
+                role: user.role,
+                device: 'watch' // Đánh dấu token này là của đồng hồ
+            };
+
+            const token = jwt.sign(
+                payload,
+                process.env.JWT_SECRET,
+                { expiresIn: '365d' } // Token cho Watch sống lâu (1 năm) để đỡ phải login lại
+            );
+
+            console.log(`⌚ Watch ${deviceId} đã đăng nhập thành công vào tài khoản ${user.email}`);
+
+            res.status(200).json({
+                status: 'LINKED',
+                token: token,
+                user: {
+                    fullName: user.full_name,
+                    email: user.email
+                }
+            });
+
+        } catch (error) {
+            console.error('Check status error:', error);
+            res.status(500).json({ message: 'Lỗi máy chủ' });
         }
     }
 };

@@ -101,23 +101,62 @@ const WatchActivityPage = () => {
                     <h3>Tổng quan ({stats.period || period})</h3>
                     <div className="history-item-meta">
                       <span>
+                        <span role="img" aria-label="record">
+                          📊
+                        </span>{' '}
                         Tổng bản ghi:{' '}
                         {stats.summary?.totalRecords ?? measurements.length}
                       </span>
                       {stats.summary?.activity && (
                         <>
                           <span>
+                            <span role="img" aria-label="steps">
+                              👣
+                            </span>{' '}
                             Bước chân:{' '}
                             {stats.summary.activity.totalSteps ?? 0}
                           </span>
                           <span>
+                            <span role="img" aria-label="calories">
+                              🔥
+                            </span>{' '}
                             Calories:{' '}
                             {stats.summary.activity.totalCalories ?? 0}
                           </span>
                         </>
                       )}
+                      {stats.summary?.heartRate && (
+                        <span>
+                          <span role="img" aria-label="heart-rate">
+                            ❤️
+                          </span>{' '}
+                          Nhịp tim TB:{' '}
+                          {stats.summary.heartRate.average ?? 0} bpm
+                        </span>
+                      )}
+                      {stats.summary?.spO2 && (
+                        <span>
+                          <span role="img" aria-label="oxygen">
+                            💨
+                          </span>{' '}
+                          SpO₂ TB:{' '}
+                          {stats.summary.spO2.average ?? 0}%
+                        </span>
+                      )}
+                      {stats.summary?.stress && (
+                        <span>
+                          <span role="img" aria-label="stress">
+                            😌
+                          </span>{' '}
+                          Stress TB:{' '}
+                          {stats.summary.stress.average ?? 0}
+                        </span>
+                      )}
                       {stats.summary?.lastMeasurement && (
                         <span>
+                          <span role="img" aria-label="clock">
+                            ⏱️
+                          </span>{' '}
                           Lần ghi gần nhất:{' '}
                           {formatDateTime(stats.summary.lastMeasurement)}
                         </span>
@@ -144,27 +183,63 @@ const WatchActivityPage = () => {
                     className="history-item"
                   >
                     <div className="history-item-main">
-                      <h3>{m.type || 'measurement'}</h3>
+                      <h3>
+                        <span role="img" aria-label="activity">
+                          ⌚
+                        </span>{' '}
+                        {m.type || 'Hoạt động'}
+                      </h3>
                       <div className="history-item-meta">
                         <span className="history-item-date">
+                          <span role="img" aria-label="time">
+                            🕒
+                          </span>{' '}
                           {formatDateTime(m.date || m.created_at)}
                         </span>
                         {typeof m.heartRate !== 'undefined' && (
-                          <span>Nhịp tim: {m.heartRate} bpm</span>
+                          <span>
+                            <span role="img" aria-label="heart-rate">
+                              ❤️
+                            </span>{' '}
+                            Nhịp tim: {m.heartRate} bpm
+                          </span>
                         )}
                         {typeof m.spO2 !== 'undefined' && (
-                          <span>SpO₂: {m.spO2}%</span>
+                          <span>
+                            <span role="img" aria-label="oxygen">
+                              💨
+                            </span>{' '}
+                            SpO₂: {m.spO2}%
+                          </span>
                         )}
                         {typeof m.stress !== 'undefined' && (
-                          <span>Stress: {m.stress}</span>
+                          <span>
+                            <span role="img" aria-label="stress">
+                              😌
+                            </span>{' '}
+                            Stress: {m.stress}
+                          </span>
                         )}
                         {(m.steps || m.calories) && (
                           <span>
-                            Bước chân: {m.steps || 0} · Cal:{' '}
-                            {m.calories || 0}
+                            <span role="img" aria-label="steps">
+                              👣
+                            </span>{' '}
+                            Bước chân: {m.steps || 0} ·{' '}
+                            <span role="img" aria-label="calories">
+                              🔥
+                            </span>{' '}
+                            Cal: {m.calories || 0}
                           </span>
                         )}
-                        {m.duration && <span>Thời lượng: {m.duration}</span>}
+                        {m.duration && (
+                          <span>
+                            <span role="img" aria-label="duration">
+                              ⏱️
+                            </span>{' '}
+                            Thời lượng: {m.duration}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
