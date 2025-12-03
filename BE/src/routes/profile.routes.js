@@ -65,7 +65,8 @@ router.get('/', authMiddleware, async (req, res) => {
             fullName: user.full_name,
             provider: user.provider,
             role: user.role,
-            avatar_url: user.avatar_url 
+            avatar_url: user.avatar_url,
+            watchDeviceId: user.watch_device_id
         });
 
     } catch (error) {

@@ -503,5 +503,9 @@ router.get('/measurements/:id', authMiddleware, watchController.getById);
 router.delete('/measurements/:id', authMiddleware, watchController.deleteMeasurement);
 
 
+router.post('/link', authMiddleware, watchController.linkDevice);
+router.get('/status/:deviceId', watchController.checkDeviceStatus);
+
+
 module.exports = router;
 
