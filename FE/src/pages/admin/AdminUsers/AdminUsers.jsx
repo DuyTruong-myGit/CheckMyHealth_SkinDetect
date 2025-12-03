@@ -33,6 +33,13 @@ const AdminUsers = () => {
   const [addUserLoading, setAddUserLoading] = useState(false)
   const [roleChanging, setRoleChanging] = useState(false)
   const [statusChanging, setStatusChanging] = useState(false)
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'warning',
+    onConfirm: null,
+  })
 
   // Fetch data
   useEffect(() => {
@@ -124,51 +131,56 @@ const AdminUsers = () => {
     navigate(`/admin/users/${userId}/history`)
   }
 
-  const handleRoleChange = async (userId, newRole, userName) => {
-    // Confirm trước khi thay đổi
-    if (!window.confirm(`Bạn có chắc muốn thay đổi quyền của ${userName} thành ${newRole === 'admin' ? 'Admin' : 'User'}?`)) {
-      return
-    }
-
-    try {
-      setRoleChanging(true)
-      await updateUserRole(userId, newRole)
-      // Refresh data
-      const data = await getUsers(searchTerm)
-      setState({ loading: false, data, error: null })
-      alert(`Đã ${newRole === 'admin' ? 'thăng cấp' : 'giáng cấp'} quyền thành công`)
-    } catch (error) {
-      alert(error.message || 'Không thể thay đổi quyền')
-      // Reload để reset combobox về giá trị cũ
-      const data = await getUsers(searchTerm)
-      setState({ loading: false, data, error: null })
-    } finally {
-      setRoleChanging(false)
-    }
+  const handleRoleChange = (userId, newRole, userName) => {
+    const isPromote = newRole === 'admin'
+    setConfirmState({
+      isOpen: true,
+      title: isPromote ? 'Thay đổi quyền sang Admin' : 'Thay đổi quyền sang User',
+      message: `Bạn có chắc muốn thay đổi quyền của ${userName} thành ${isPromote ? 'Admin' : 'User'}?`,
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          setRoleChanging(true)
+          setConfirmState(prev => ({ ...prev, isOpen: false }))
+          await updateUserRole(userId, newRole)
+          const data = await getUsers(searchTerm)
+          setState({ loading: false, data, error: null })
+          alert(`Đã ${isPromote ? 'thăng cấp' : 'giáng cấp'} quyền thành công`)
+        } catch (error) {
+          alert(error.message || 'Không thể thay đổi quyền')
+          const data = await getUsers(searchTerm)
+          setState({ loading: false, data, error: null })
+        } finally {
+          setRoleChanging(false)
+        }
+      },
+    })
   }
 
-  const handleStatusChange = async (userId, newStatus, userName) => {
-    // Confirm trước khi thay đổi
+  const handleStatusChange = (userId, newStatus, userName) => {
     const statusText = newStatus === 'active' ? 'kích hoạt' : 'đình chỉ'
-    if (!window.confirm(`Bạn có chắc muốn ${statusText} tài khoản của ${userName}?`)) {
-      return
-    }
-
-    try {
-      setStatusChanging(true)
-      await updateUserStatus(userId, newStatus)
-      // Refresh data
-      const data = await getUsers(searchTerm)
-      setState({ loading: false, data, error: null })
-      alert(`Đã ${statusText} tài khoản thành công`)
-    } catch (error) {
-      alert(error.message || 'Không thể thay đổi trạng thái')
-      // Reload để reset combobox về giá trị cũ
-      const data = await getUsers(searchTerm)
-      setState({ loading: false, data, error: null })
-    } finally {
-      setStatusChanging(false)
-    }
+    setConfirmState({
+      isOpen: true,
+      title: newStatus === 'active' ? 'Kích hoạt tài khoản' : 'Đình chỉ tài khoản',
+      message: `Bạn có chắc muốn ${statusText} tài khoản của ${userName}?`,
+      type: newStatus === 'active' ? 'default' : 'danger',
+      onConfirm: async () => {
+        try {
+          setStatusChanging(true)
+          setConfirmState(prev => ({ ...prev, isOpen: false }))
+          await updateUserStatus(userId, newStatus)
+          const data = await getUsers(searchTerm)
+          setState({ loading: false, data, error: null })
+          alert(`Đã ${statusText} tài khoản thành công`)
+        } catch (error) {
+          alert(error.message || 'Không thể thay đổi trạng thái')
+          const data = await getUsers(searchTerm)
+          setState({ loading: false, data, error: null })
+        } finally {
+          setStatusChanging(false)
+        }
+      },
+    })
   }
 
   return (
@@ -352,6 +364,25 @@ const AdminUsers = () => {
         loading={addUserLoading}
       />
 
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        onClose={() =>
+          setConfirmState(prev => ({
+            ...prev,
+            isOpen: false,
+          }))
+        }
+        onConfirm={async () => {
+          if (typeof confirmState.onConfirm === 'function') {
+            await confirmState.onConfirm()
+          } else {
+            setConfirmState(prev => ({ ...prev, isOpen: false }))
+          }
+        }}
+      />
     </section>
   )
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import scheduleService from '../../../services/features/scheduleService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import '../HistoryPage/History.css'
 
 const SchedulePage = () => {
@@ -14,6 +15,13 @@ const SchedulePage = () => {
   const [error, setError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState(null) // ID của lịch trình đang edit
+  const [confirmState, setConfirmState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'danger',
+    onConfirm: null,
+  })
   const getTodayDate = () => {
     return new Date().toISOString().split('T')[0]
   }
@@ -230,19 +238,24 @@ const SchedulePage = () => {
     }
   }
 
-  const handleDeleteSchedule = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xóa lịch trình này?')) {
-      return
-    }
-
-    try {
-      setError('')
-      await scheduleService.delete(id)
-      await loadTasks()
-    } catch (err) {
-      console.error('Error deleting schedule:', err)
-      setError('Lỗi khi xóa lịch trình')
-    }
+  const handleDeleteSchedule = (id) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Xóa lịch trình',
+      message: 'Bạn có chắc muốn xóa lịch trình này? Hành động này không thể hoàn tác.',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setError('')
+          setConfirmState(prev => ({ ...prev, isOpen: false }))
+          await scheduleService.delete(id)
+          await loadTasks()
+        } catch (err) {
+          console.error('Error deleting schedule:', err)
+          setError('Lỗi khi xóa lịch trình')
+        }
+      },
+    })
   }
 
   const toggleRepeatDay = (day) => {
@@ -563,6 +576,26 @@ const SchedulePage = () => {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        onClose={() =>
+          setConfirmState(prev => ({
+            ...prev,
+            isOpen: false,
+          }))
+        }
+        onConfirm={async () => {
+          if (typeof confirmState.onConfirm === 'function') {
+            await confirmState.onConfirm()
+          } else {
+            setConfirmState(prev => ({ ...prev, isOpen: false }))
+          }
+        }}
+      />
     </div>
   )
 }
