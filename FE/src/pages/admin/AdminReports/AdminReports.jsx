@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import '../AdminUsers/AdminUsers.css'
 import {
   getDiagnosisReport,
@@ -49,6 +50,12 @@ const AdminReports = () => {
   const [difficultCases, setDifficultCases] = useState({ cases: [], total: 0, threshold: 0.6 })
   const [difficultCasesLoading, setDifficultCasesLoading] = useState(false)
   const [difficultThreshold, setDifficultThreshold] = useState(0.6)
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'warning',
+  })
 
   const loadDiagnosisReport = async (page = 1) => {
     try {
@@ -68,7 +75,12 @@ const AdminReports = () => {
       setDiagnosisData(data)
     } catch (error) {
       console.error('Failed to load diagnosis report:', error)
-      alert('Lỗi khi tải báo cáo: ' + error.message)
+      setAlertState({
+        isOpen: true,
+        title: 'Lỗi khi tải báo cáo chuẩn đoán',
+        message: 'Lỗi khi tải báo cáo: ' + (error.message || ''),
+        type: 'danger',
+      })
     } finally {
       setDiagnosisLoading(false)
     }
@@ -92,7 +104,12 @@ const AdminReports = () => {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      alert('Export thất bại: ' + error.message)
+      setAlertState({
+        isOpen: true,
+        title: 'Export báo cáo thất bại',
+        message: 'Export thất bại: ' + (error.message || ''),
+        type: 'danger',
+      })
     }
   }
 
@@ -103,7 +120,12 @@ const AdminReports = () => {
       setGrowthData(data)
     } catch (error) {
       console.error('Failed to load user growth:', error)
-      alert('Lỗi khi tải báo cáo tăng trưởng: ' + error.message)
+      setAlertState({
+        isOpen: true,
+        title: 'Lỗi khi tải báo cáo tăng trưởng',
+        message: 'Lỗi khi tải báo cáo tăng trưởng: ' + (error.message || ''),
+        type: 'danger',
+      })
     } finally {
       setGrowthLoading(false)
     }
@@ -116,7 +138,12 @@ const AdminReports = () => {
       setDifficultCases(data)
     } catch (error) {
       console.error('Failed to load difficult cases:', error)
-      alert('Lỗi khi tải ca khó: ' + error.message)
+      setAlertState({
+        isOpen: true,
+        title: 'Lỗi khi tải danh sách ca khó',
+        message: 'Lỗi khi tải ca khó: ' + (error.message || ''),
+        type: 'danger',
+      })
     } finally {
       setDifficultCasesLoading(false)
     }
@@ -134,7 +161,12 @@ const AdminReports = () => {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      alert('Export thất bại: ' + error.message)
+      setAlertState({
+        isOpen: true,
+        title: 'Export danh sách ca khó thất bại',
+        message: 'Export thất bại: ' + (error.message || ''),
+        type: 'danger',
+      })
     }
   }
 
@@ -554,6 +586,26 @@ const AdminReports = () => {
           to { transform: rotate(360deg); }
         }
       `}</style>
+      <ConfirmDialog
+        isOpen={alertState.isOpen}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText="Đóng"
+        cancelText=""
+        onClose={() =>
+          setAlertState(prev => ({
+            ...prev,
+            isOpen: false,
+          }))
+        }
+        onConfirm={() =>
+          setAlertState(prev => ({
+            ...prev,
+            isOpen: false,
+          }))
+        }
+      />
     </section>
   )
 }

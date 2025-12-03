@@ -111,13 +111,25 @@ const AdminUsers = () => {
     setAddUserLoading(true)
     try {
       await createUser(userData)
-      // Refresh data
       const data = await getUsers(searchTerm)
       setState({ loading: false, data, error: null })
       setShowAddModal(false)
       setCurrentPage(1)
+      setConfirmState({
+        isOpen: true,
+        title: 'Tạo người dùng thành công',
+        message: 'Người dùng mới đã được thêm vào hệ thống.',
+        type: 'default',
+        onConfirm: () => setConfirmState(prev => ({ ...prev, isOpen: false })),
+      })
     } catch (error) {
-      alert(error.message || 'Không thể tạo người dùng')
+      setConfirmState({
+        isOpen: true,
+        title: 'Lỗi khi tạo người dùng',
+        message: error.message || 'Không thể tạo người dùng',
+        type: 'danger',
+        onConfirm: () => setConfirmState(prev => ({ ...prev, isOpen: false })),
+      })
     } finally {
       setAddUserLoading(false)
     }
@@ -145,9 +157,23 @@ const AdminUsers = () => {
           await updateUserRole(userId, newRole)
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
-          alert(`Đã ${isPromote ? 'thăng cấp' : 'giáng cấp'} quyền thành công`)
+          setConfirmState(prev => ({
+            ...prev,
+            isOpen: true,
+            title: 'Cập nhật quyền thành công',
+            message: `Đã ${isPromote ? 'thăng cấp' : 'giáng cấp'} quyền cho ${userName}.`,
+            type: 'default',
+            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
+          }))
         } catch (error) {
-          alert(error.message || 'Không thể thay đổi quyền')
+          setConfirmState(prev => ({
+            ...prev,
+            isOpen: true,
+            title: 'Lỗi khi cập nhật quyền',
+            message: error.message || 'Không thể thay đổi quyền',
+            type: 'danger',
+            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
+          }))
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
         } finally {
@@ -171,9 +197,23 @@ const AdminUsers = () => {
           await updateUserStatus(userId, newStatus)
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
-          alert(`Đã ${statusText} tài khoản thành công`)
+          setConfirmState(prev => ({
+            ...prev,
+            isOpen: true,
+            title: 'Cập nhật trạng thái thành công',
+            message: `Đã ${statusText} tài khoản của ${userName}.`,
+            type: 'default',
+            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
+          }))
         } catch (error) {
-          alert(error.message || 'Không thể thay đổi trạng thái')
+          setConfirmState(prev => ({
+            ...prev,
+            isOpen: true,
+            title: 'Lỗi khi cập nhật trạng thái',
+            message: error.message || 'Không thể thay đổi trạng thái',
+            type: 'danger',
+            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
+          }))
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
         } finally {
