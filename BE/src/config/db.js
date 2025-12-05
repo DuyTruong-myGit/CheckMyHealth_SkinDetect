@@ -42,7 +42,7 @@ try {
     if (!isLocal) {
         poolConfig.ssl = {
             // [SỬA QUAN TRỌNG] Đổi true thành false để chấp nhận chứng chỉ của Aiven
-            rejectUnauthorized: false 
+            rejectUnauthorized: true
         };
     }
 
