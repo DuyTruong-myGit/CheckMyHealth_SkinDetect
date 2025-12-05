@@ -36,6 +36,18 @@ const initializeDatabase = async () => {
       }
     }
 
+    // 3. [MỚI - QUAN TRỌNG] Thêm cột last_triggered_at cho schedules
+    // Đây là "chìa khóa" để chặn server gửi trùng lặp
+    try {
+        await connection.query('SELECT last_triggered_at FROM schedules LIMIT 1');
+    } catch (err) {
+        if (err.errno === 1054) { // Lỗi 1054: Unknown column
+            console.log('⚠️ Đang thêm cột last_triggered_at để chặn spam thông báo...');
+            await connection.query('ALTER TABLE schedules ADD COLUMN last_triggered_at DATETIME DEFAULT NULL');
+            console.log('✅ Đã thêm cột last_triggered_at thành công!');
+        }
+    }
+
     // 3. Kiểm tra bảng watch_measurements (Giữ nguyên logic cũ)
     const [watchTableExists] = await connection.query(`
       SELECT COUNT(*) as count 
