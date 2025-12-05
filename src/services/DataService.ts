@@ -14,13 +14,12 @@ export interface HealthRecord {
   duration?: string;
   createdDate?: string; 
   created_at?: string;
+  isSynced?: boolean; 
 }
 
-// Hàm chuẩn hóa ngày giờ
 const formatDate = (dateInput: string | number) => {
   try {
     const date = new Date(dateInput);
-    // Kiểm tra nếu date không hợp lệ
     if (isNaN(date.getTime())) return 'Mới đo';
 
     const hours = date.getHours().toString().padStart(2, '0');
@@ -37,7 +36,7 @@ export const DataService = {
   
   getRecords: async (): Promise<HealthRecord[]> => {
     try {
-      const response = await fetch(`${API_URL}/measurements`);
+      const response = await fetch(`${API_URL}/watch/measurements`); 
       const rawData = await response.json();
       
       if (Array.isArray(rawData)) {
@@ -51,24 +50,15 @@ export const DataService = {
               steps: Number(item.steps || 0),
               calories: Number(item.calories || 0),
               duration: item.duration || '00:00',
-              // [FIX QUAN TRỌNG] Tự động sửa lại timestamp nếu nó là dãy số lạ
               timestamp: (item.timestamp && item.timestamp.includes('/')) 
                          ? item.timestamp 
                          : formatDate(item.created_at || item.createdDate || Number(item.timestamp))
           }));
 
-          // Sắp xếp mới nhất lên đầu
-          mappedData.sort((a, b) => {
-             const dateA = new Date(a.created_at || a.createdDate || 0).getTime();
-             const dateB = new Date(b.created_at || b.createdDate || 0).getTime();
-             return dateB - dateA;
-          });
-
-          // Lưu cache
-          await StorageService.syncServerData(mappedData);
-          return mappedData;
+          const finalData = await StorageService.syncServerData(mappedData);
+          return finalData;
       }
-      return [];
+      return await StorageService.getLocalHistory();
     } catch (error) {
       console.log("Offline mode:", error);
       return await StorageService.getLocalHistory();
@@ -79,19 +69,25 @@ export const DataService = {
     const now = new Date();
     const newRecord = {
         ...record,
+        id: Date.now().toString(), 
         createdDate: now.toISOString(),
-        created_at: now.toISOString()
+        created_at: now.toISOString(),
+        isSynced: false 
     };
+    await StorageService.saveToStorage(newRecord);
 
     try {
-      await fetch(`${API_URL}/measurements`, {
+      const response = await fetch(`${API_URL}/watch/measurements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newRecord),
       });
-      await DataService.getRecords(); 
+
+      if (response.ok) {
+          await DataService.getRecords(); 
+      }
     } catch (error) {
-      await StorageService.saveToStorage({ ...newRecord, isSynced: false });
+      console.log("Gửi thất bại, nhưng đã lưu offline:", error);
     }
   },
 
@@ -101,8 +97,6 @@ export const DataService = {
     
     const dailyRecords = records.filter(r => {
       try {
-        // Ưu tiên lọc theo timestamp chuỗi đã được chuẩn hóa (DD/MM)
-        // Vì dữ liệu rác đã được fix ở hàm getRecords rồi
         if (r.timestamp && r.timestamp.includes('/')) {
              const parts = r.timestamp.split(' - '); 
              if (parts.length > 1) {
@@ -110,7 +104,6 @@ export const DataService = {
                  return Number(datePart[0]) === targetDay && Number(datePart[1]) === targetMonth;
              }
         }
-        // Fallback
         const dateStr = r.created_at || r.createdDate;
         if (dateStr) {
             const rDate = new Date(dateStr);
@@ -138,8 +131,6 @@ export const DataService = {
     if (workoutRecords.length > 0) {
         const totalSteps = workoutRecords.reduce((sum, r) => sum + (Number(r.steps) || 0), 0);
         const totalCalories = workoutRecords.reduce((sum, r) => sum + (Number(r.calories) || 0), 0);
-        // [FIX] Bước chân tính Tổng hay Trung bình? Thường là Tổng trong ngày
-        // Nhưng nếu bạn muốn trung bình mỗi lần đo:
         avgSteps = Math.round(totalSteps / workoutRecords.length);
         avgCalories = Math.round(totalCalories / workoutRecords.length);
     }

@@ -10,10 +10,17 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
   useEffect(() => {
     const getID = async () => {
       let id = await AsyncStorage.getItem('MY_DEVICE_ID');
-      if (!id) {
-        id = Math.floor(Math.random() * 1000).toString();
+      
+      // --- LOGIC TỰ ĐỘNG CẬP NHẬT ID MỚI ---
+      // Nếu chưa có ID HOẶC ID cũ không đủ 3 số (ví dụ số "6" cũ) -> Tạo mới
+      if (!id || id.length < 3) {
+        // Tạo số ngẫu nhiên từ 100 đến 999 (đảm bảo luôn 3 chữ số)
+        id = Math.floor(100 + Math.random() * 900).toString();
+        
+        // Lưu đè ID mới vào bộ nhớ
         await AsyncStorage.setItem('MY_DEVICE_ID', id);
       }
+      
       setDeviceId(id);
     };
     getID();
@@ -37,6 +44,7 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
         
         <View style={[styles.idCircle, userName ? styles.idCircleLinked : {}]}>
           <Text style={styles.label}>ID KẾT NỐI</Text>
+          {/* Hiển thị ID với dấu thăng # */}
           <Text style={styles.idValue}>#{deviceId}</Text>
           <Text style={[styles.statusTag, userName ? {color: '#30D158'} : {color: '#999'}]}>
             {userName ? '● Online' : '○ Offline'}
@@ -77,11 +85,9 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
           </TouchableOpacity>
         )}
         
-        {/* Khoảng trống đệm để không bị nút quay lại che nội dung */}
         <View style={{height: 60}} /> 
       </ScrollView>
 
-      {/* Nút Quay lại dạng thanh ngang (Fixed Bottom) */}
       <TouchableOpacity 
           style={styles.backBtn} 
           onPress={() => navigation.goBack()}
@@ -117,7 +123,6 @@ const styles = StyleSheet.create({
   linkAction: { marginBottom: 5 },
   linkActionText: { color: '#FF3B30', fontSize: 8, textDecorationLine: 'underline' },
 
-  // Style nút quay lại giống màn hình Sức khỏe
   backBtn: { 
     position: 'absolute', 
     bottom: 0, 

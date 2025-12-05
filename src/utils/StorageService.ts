@@ -3,15 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEY = 'HEALTH_HISTORY';
 
 export const StorageService = {
-  // Hàm lưu lẻ 1 bản ghi (Dùng khi đo xong mà mất mạng)
   saveToStorage: async (newItem: any) => {
     try {
       const existing = await AsyncStorage.getItem(STORAGE_KEY);
       const history = existing ? JSON.parse(existing) : [];
       
       const record = {
-        id: Date.now().toString(),
-        ...newItem
+        ...newItem,
+        isSynced: newItem.isSynced || false
       };
       
       history.unshift(record); 
@@ -21,31 +20,33 @@ export const StorageService = {
     }
   },
 
-  // [MỚI] Hàm quan trọng: Lưu dữ liệu từ Server về máy (Cache)
-  // Giúp xem được lịch sử kể cả khi Offline
   syncServerData: async (serverData: any[]) => {
     try {
-      // 1. Lấy dữ liệu cũ trong máy để tìm các item chưa đồng bộ
       const existing = await AsyncStorage.getItem(STORAGE_KEY);
       const localList = existing ? JSON.parse(existing) : [];
       
-      // Giữ lại những cái chưa gửi đi (isSynced = false)
-      const unsyncedItems = localList.filter((item: any) => item.isSynced === false);
+      const serverIds = new Set(serverData.map((d: any) => d.id));
+      
+      const unsyncedItems = localList.filter((item: any) => 
+          item.isSynced === false && !serverIds.has(item.id)
+      );
 
-      // 2. Chuẩn bị dữ liệu từ Server (Đánh dấu là đã synced)
       const serverItems = serverData.map(item => ({ ...item, isSynced: true }));
       
-      // 3. Gộp lại: Chưa gửi (Mới nhất) + Đã gửi (Server trả về)
-      // Sắp xếp theo thời gian mới nhất lên đầu (nếu có trường createdDate hoặc timestamp)
       const mergedList = [...unsyncedItems, ...serverItems];
 
-      // 4. Lưu đè vào bộ nhớ máy
+      mergedList.sort((a: any, b: any) => {
+         const timeA = new Date(a.created_at || a.timestamp || 0).getTime();
+         const timeB = new Date(b.created_at || b.timestamp || 0).getTime();
+         return timeB - timeA;
+      });
+
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
       
       return mergedList;
     } catch (e) {
       console.error("Lỗi sync cache:", e);
-      return serverData; // Lỗi thì trả về data server gốc
+      return serverData;
     }
   },
 
@@ -67,7 +68,5 @@ export const StorageService = {
     const all = await StorageService.getLocalHistory();
     const updated = all.map((item: any) => ({ ...item, isSynced: true }));
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  },
-
-  saveMeasurement: async (data: any) => {}
+  }
 };

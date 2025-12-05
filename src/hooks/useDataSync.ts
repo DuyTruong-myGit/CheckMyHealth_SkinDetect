@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthService } from '../services/AuthService';
-import { StorageService, HealthSession } from '../utils/StorageService';
-import { API_URL, getHeaders } from '../utils/api';
+import { StorageService } from '../utils/StorageService'; 
+import { API_URL } from '../utils/api'; 
 
 export const useDataSync = (deviceId: string) => {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -10,56 +10,61 @@ export const useDataSync = (deviceId: string) => {
   const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const savedName = await AsyncStorage.getItem('LINKED_USER_NAME');
-      if (savedName) setUserName(savedName);
+    const checkLogin = async () => {
+      const name = await AsyncStorage.getItem('LINKED_USER_NAME');
+      if (name) setUserName(name);
     };
-    loadUser();
+    checkLogin();
   }, []);
 
   const syncData = async () => {
-    if (isSyncing) return;
+    if (isSyncing || deviceId === '...') return;
     setIsSyncing(true);
     setSyncStatus('IDLE');
 
     try {
-      // 1. Đăng nhập nếu cần
-      const token = await AsyncStorage.getItem('USER_TOKEN');
+      let token = await AsyncStorage.getItem('USER_TOKEN');
+
       if (!token) {
-          await AuthService.login("duytruongton@gmail.com", "123456");
-          const profile = await AuthService.getProfile();
-          if (profile?.fullName) {
-              await AsyncStorage.setItem('LINKED_USER_NAME', profile.fullName);
-              setUserName(profile.fullName);
+          console.log("Checking pairing status for ID:", deviceId);
+          const statusRes = await fetch(`${API_URL}/watch/status/${deviceId}`);
+          const statusData = await statusRes.json();
+
+          if (statusData.status === 'LINKED' && statusData.token) {
+              await AsyncStorage.setItem('USER_TOKEN', statusData.token);
+              await AsyncStorage.setItem('LINKED_USER_NAME', statusData.user.fullName);
+
+              setUserName(statusData.user.fullName);
+              token = statusData.token;
+              alert("Kết nối thành công với " + statusData.user.fullName);
+          } else {
+              alert(`Chưa kết nối! Vui lòng mở App trên điện thoại và nhập ID: ${deviceId}`);
+              setIsSyncing(false);
+              return; 
           }
       }
 
-      // 2. Lấy các bản ghi chưa Sync
       const unsyncedRecords = await StorageService.getUnsynced();
-      
+
       if (unsyncedRecords.length > 0) {
-          console.log(`Đang đồng bộ ${unsyncedRecords.length} bản ghi...`);
-          
-          // Gửi từng bản ghi lên Server (Hoặc gửi mảng nếu API hỗ trợ)
           for (const record of unsyncedRecords) {
-             const response = await fetch(`${API_URL}/health`, {
+             const response = await fetch(`${API_URL}/watch/measurements`, {
                 method: 'POST',
-                headers: await getHeaders(),
-                body: JSON.stringify({
-                    heartRate: record.heartRate,
-                    spO2: record.spO2,
-                    stress: record.stress
-                }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(record),
              });
              
-             if (!response.ok) throw new Error('Lỗi gửi dữ liệu');
+             if (!response.ok) {
+                 if (response.status === 401) {
+                     await resetLink(); 
+                 }
+                 throw new Error('Lỗi gửi dữ liệu');
+             }
           }
-
-          // 3. Đánh dấu tất cả đã Sync thành công
           await StorageService.markAllSynced();
-          console.log("✅ Đồng bộ hoàn tất!");
-      } else {
-          console.log("⚠ Không có dữ liệu mới để gửi.");
       }
 
       setSyncStatus('SUCCESS');
@@ -73,9 +78,14 @@ export const useDataSync = (deviceId: string) => {
   };
 
   const resetLink = async () => {
-    await AsyncStorage.clear();
-    setUserName(null);
-    setSyncStatus('IDLE');
+    try {
+      await AsyncStorage.removeItem('USER_TOKEN');
+      await AsyncStorage.removeItem('LINKED_USER_NAME');      
+      setUserName(null);
+      setSyncStatus('IDLE');
+    } catch (e) {
+      console.error("Lỗi khi hủy liên kết:", e);
+    }
   };
 
   return { isSyncing, syncStatus, userName, syncData, resetLink };
