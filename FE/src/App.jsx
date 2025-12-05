@@ -14,6 +14,7 @@ import HomePage from './pages/public/HomePage/HomePage.jsx'
 import NewsPage from './pages/public/NewsPage/NewsPage.jsx'
 import DiseasesPage from './pages/public/DiseasesPage/DiseasesPage.jsx'
 import DiseaseDetailPage from './pages/public/DiseaseDetailPage/DiseaseDetailPage.jsx'
+import DiseaseComparePage from './pages/public/DiseaseComparePage/DiseaseComparePage.jsx'
 import AboutPage from './pages/public/AboutPage/AboutPage.jsx'
 import FAQPage from './pages/public/FAQPage/FAQPage.jsx'
 
@@ -88,6 +89,7 @@ function App() {
           }
         />
         <Route path="/diseases" element={<DiseasesPage />} />
+        <Route path="/diseases/compare" element={<DiseaseComparePage />} />
         <Route path="/diseases/:id" element={<DiseaseDetailPage />} />
         <Route 
           path="/schedule" 

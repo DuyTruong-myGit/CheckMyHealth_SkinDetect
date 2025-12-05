@@ -15,14 +15,20 @@ const NotificationBell = () => {
 
   // Debounced loadNotifications để tránh gọi nhiều lần cùng lúc
   const loadNotifications = useCallback(async () => {
+    // Prevent concurrent loads
+    if (loadingRef.current) {
+      return
+    }
+
     // Clear previous debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
     }
 
     // Debounce: đợi 300ms trước khi thực sự load
     debounceTimerRef.current = setTimeout(async () => {
-      // Prevent concurrent loads
+      // Double check after timeout
       if (loadingRef.current) {
         return
       }
@@ -37,6 +43,7 @@ const NotificationBell = () => {
       } finally {
         setLoading(false)
         loadingRef.current = false
+        debounceTimerRef.current = null
       }
     }, 300)
   }, [])
@@ -85,8 +92,15 @@ const NotificationBell = () => {
         console.log('🔄 Manual refresh triggered')
         loadNotifications()
       },
-      // Khi tab được focus lại (user quay lại tab)
+      // Khi tab được focus lại (user quay lại tab) - chỉ refresh nếu đã ít nhất 5 giây từ lần load cuối
       onVisibilityChange: () => {
+        // Prevent too frequent refreshes
+        const lastRefresh = sessionStorage.getItem('lastNotificationRefresh')
+        const now = Date.now()
+        if (lastRefresh && (now - parseInt(lastRefresh)) < 5000) {
+          return // Skip if refreshed less than 5 seconds ago
+        }
+        sessionStorage.setItem('lastNotificationRefresh', now.toString())
         console.log('👁️ Tab visible, refreshing notifications...')
         loadNotifications()
       }
@@ -99,12 +113,14 @@ const NotificationBell = () => {
       }
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current)
+        debounceTimerRef.current = null
       }
       if (cleanup) {
         cleanup()
       }
+      loadingRef.current = false
     }
-  }, [isAuthenticated, loadNotifications]) // Removed isOpen from dependencies
+  }, [isAuthenticated]) // Removed loadNotifications from dependencies to prevent loop
 
   // Refresh khi click vào bell
   const handleBellClick = () => {

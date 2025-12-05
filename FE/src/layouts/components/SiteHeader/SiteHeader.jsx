@@ -139,7 +139,7 @@ const SiteHeader = ({ variant = 'site' }) => {
                     className={buildLinkClass}
                     onClick={() => setServicesMenuOpen(false)}
                   >
-                    Lịch sử
+                    Lịch sử chuẩn đoán
                   </NavLink>
                 )}
               </div>

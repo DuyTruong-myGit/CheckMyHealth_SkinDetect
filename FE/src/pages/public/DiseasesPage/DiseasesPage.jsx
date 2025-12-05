@@ -11,7 +11,7 @@ const DiseasesPage = () => {
   const [diseases, setDiseases] = useState([])
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(12)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
@@ -53,6 +53,12 @@ const DiseasesPage = () => {
             <h1 className="history-title">Bệnh lý</h1>
             <p className="history-subtitle">Tra cứu thông tin về các bệnh lý</p>
           </div>
+          <button
+            className="history-new-btn"
+            onClick={() => navigate('/diseases/compare')}
+          >
+            So sánh bệnh lý
+          </button>
         </div>
 
         {error && (
