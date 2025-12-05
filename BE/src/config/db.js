@@ -37,10 +37,12 @@ try {
         queueLimit
     };
 
-    // 5. Chỉ thêm SSL nếu KHÔNG phải là local (tức là khi deploy lên Render)
+
+
     if (!isLocal) {
         poolConfig.ssl = {
-            rejectUnauthorized: true
+            // [SỬA QUAN TRỌNG] Đổi true thành false để chấp nhận chứng chỉ của Aiven
+            rejectUnauthorized: false 
         };
     }
 

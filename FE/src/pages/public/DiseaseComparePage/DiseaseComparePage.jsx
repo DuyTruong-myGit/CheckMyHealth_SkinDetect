@@ -28,6 +28,8 @@ const DiseaseComparePage = () => {
   const [showDropdownA, setShowDropdownA] = useState(false)
   const [showDropdownB, setShowDropdownB] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loadingA, setLoadingA] = useState(false)
+  const [loadingB, setLoadingB] = useState(false)
   const [allDiseases, setAllDiseases] = useState([])
   const dropdownARef = useRef(null)
   const dropdownBRef = useRef(null)
@@ -93,16 +95,38 @@ const DiseaseComparePage = () => {
       .slice(0, 10)
   }, [searchB, allDiseases, diseaseA])
 
-  const handleSelectDiseaseA = (disease) => {
-    setDiseaseA(disease)
+  const handleSelectDiseaseA = async (disease) => {
     setSearchA(disease.disease_name_vi)
     setShowDropdownA(false)
+    // Load full details from API to get all fields
+    try {
+      setLoadingA(true)
+      const fullDetails = await diseaseService.getById(disease.info_id)
+      setDiseaseA(fullDetails)
+    } catch (err) {
+      console.error('Error loading disease A details:', err)
+      // Fallback to basic info if API fails
+      setDiseaseA(disease)
+    } finally {
+      setLoadingA(false)
+    }
   }
 
-  const handleSelectDiseaseB = (disease) => {
-    setDiseaseB(disease)
+  const handleSelectDiseaseB = async (disease) => {
     setSearchB(disease.disease_name_vi)
     setShowDropdownB(false)
+    // Load full details from API to get all fields
+    try {
+      setLoadingB(true)
+      const fullDetails = await diseaseService.getById(disease.info_id)
+      setDiseaseB(fullDetails)
+    } catch (err) {
+      console.error('Error loading disease B details:', err)
+      // Fallback to basic info if API fails
+      setDiseaseB(disease)
+    } finally {
+      setLoadingB(false)
+    }
   }
 
   const handleClearA = () => {
@@ -193,7 +217,13 @@ const DiseaseComparePage = () => {
                 </div>
               )}
             </div>
-            {diseaseA && (
+            {loadingA ? (
+              <div className="compare-selection__preview">
+                <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+                  Đang tải...
+                </div>
+              </div>
+            ) : diseaseA && (
               <div className="compare-selection__preview">
                 {diseaseA.image_url && (
                   <div className="compare-selection__preview-image">
@@ -269,7 +299,13 @@ const DiseaseComparePage = () => {
                 </div>
               )}
             </div>
-            {diseaseB && (
+            {loadingB ? (
+              <div className="compare-selection__preview">
+                <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+                  Đang tải...
+                </div>
+              </div>
+            ) : diseaseB && (
               <div className="compare-selection__preview">
                 {diseaseB.image_url && (
                   <div className="compare-selection__preview-image">
@@ -285,30 +321,45 @@ const DiseaseComparePage = () => {
         </div>
 
         {/* Comparison Results */}
-        {diseaseA && diseaseB && (
+        {diseaseA && diseaseB && !loadingA && !loadingB && (
           <div className="compare-results">
-            {COMPARISON_FIELDS.map(({ key, label, field }) => (
-              <div key={key} className="compare-results__card">
-                <div className="compare-results__label">{label}</div>
-                <div className="compare-results__content">
-                  <div className="compare-results__side compare-results__side--a">
-                    <div className="compare-results__side-content">
-                      {diseaseA[field] || (
-                        <span className="compare-results__empty">Chưa có thông tin</span>
-                      )}
+            {COMPARISON_FIELDS.map(({ key, label, field }) => {
+              const valueA = diseaseA[field]
+              const valueB = diseaseB[field]
+              
+              return (
+                <div key={key} className="compare-results__card">
+                  <div className="compare-results__label">{label}</div>
+                  <div className="compare-results__content">
+                    <div className="compare-results__side compare-results__side--a">
+                      <div className="compare-results__side-content">
+                        {valueA ? (
+                          <div>{valueA}</div>
+                        ) : (
+                          <span className="compare-results__empty">Chưa có thông tin</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="compare-results__divider" />
-                  <div className="compare-results__side compare-results__side--b">
-                    <div className="compare-results__side-content">
-                      {diseaseB[field] || (
-                        <span className="compare-results__empty">Chưa có thông tin</span>
-                      )}
+                    <div className="compare-results__divider" />
+                    <div className="compare-results__side compare-results__side--b">
+                      <div className="compare-results__side-content">
+                        {valueB ? (
+                          <div>{valueB}</div>
+                        ) : (
+                          <span className="compare-results__empty">Chưa có thông tin</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+          </div>
+        )}
+
+        {(loadingA || loadingB) && diseaseA && diseaseB && (
+          <div className="compare-empty">
+            <p>Đang tải thông tin chi tiết...</p>
           </div>
         )}
 
