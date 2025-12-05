@@ -1,3 +1,8 @@
+const cron = require('node-cron');
+const { pool } = require('../config/db');
+const notificationModel = require('../models/notification.model');
+const admin = require('firebase-admin');
+
 // Code Firebase init của bạn ở đây...
 if (!admin.apps.length) {
     let serviceAccount = null;
