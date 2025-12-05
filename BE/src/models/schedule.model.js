@@ -5,10 +5,27 @@ const scheduleModel = {
     // 1. Create: Thêm logic specific_date
     create: async (userId, data) => {
         try {
-            // Nếu repeat_days rỗng -> lưu specific_date
             const repeatDays = (data.repeat_days && data.repeat_days.length > 0) ? data.repeat_days : null;
-            const specificDate = repeatDays ? null : data.specific_date; // 'YYYY-MM-DD'
+            const specificDate = repeatDays ? null : data.specific_date;
 
+            // ✅ THÊM: Kiểm tra lịch trùng lặp trong vòng 5 giây gần đây
+            const [duplicates] = await pool.query(
+                `SELECT schedule_id FROM schedules 
+                 WHERE user_id = ? 
+                 AND title = ? 
+                 AND type = ?
+                 AND reminder_time = ?
+                 AND created_at > (NOW() - INTERVAL 5 SECOND)`,
+                [userId, data.title, data.type, data.reminder_time]
+            );
+
+            // Nếu đã có lịch giống hệt trong 5 giây gần đây -> Không tạo nữa
+            if (duplicates.length > 0) {
+                console.log(`⚠️ Bỏ qua lịch trùng lặp cho User ${userId}: ${data.title}`);
+                return duplicates[0].schedule_id; // Trả về ID của lịch đã tồn tại
+            }
+
+            // Tiến hành tạo mới
             const [result] = await pool.query(
                 `INSERT INTO schedules (user_id, title, type, reminder_time, repeat_days, specific_date) 
                  VALUES (?, ?, ?, ?, ?, ?)`,
@@ -20,7 +37,6 @@ const scheduleModel = {
             throw error;
         }
     },
-
     // 2. Update (MỚI)
     update: async (userId, scheduleId, data) => {
         try {
