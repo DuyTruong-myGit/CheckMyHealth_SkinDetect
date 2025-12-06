@@ -247,15 +247,23 @@ router.get('/stats', scheduleController.getStats);
  *             properties:
  *               title:
  *                 type: string
- *               description:
+ *                 description: Tiêu đề lịch trình
+ *               type:
  *                 type: string
- *               scheduled_date:
+ *                 enum: [medication, skincare, checkup, other, exercise, appointment]
+ *                 description: Loại lịch trình
+ *               reminder_time:
+ *                 type: string
+ *                 description: Thời gian nhắc nhở (HH:mm)
+ *               repeat_days:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: Các ngày lặp lại (2-8, mặc định 2=Thứ 2, 8=Chủ nhật)
+ *               specific_date:
  *                 type: string
  *                 format: date
- *               time:
- *                 type: string
- *               is_completed:
- *                 type: boolean
+ *                 description: Ngày cụ thể nếu không lặp lại (YYYY-MM-DD)
  *     responses:
  *       200:
  *         description: Cập nhật thành công

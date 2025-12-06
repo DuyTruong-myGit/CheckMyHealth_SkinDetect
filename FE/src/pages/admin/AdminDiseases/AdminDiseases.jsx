@@ -22,6 +22,7 @@ const AdminDiseases = () => {
   const [importing, setImporting] = useState(false)
   const [importExportExpanded, setImportExportExpanded] = useState(false)
   const [importResult, setImportResult] = useState(null)
+  const [debounceTimer, setDebounceTimer] = useState(null)
 
   const loadDiseases = async (keyword = searchTerm, preservePage = false) => {
     try {
@@ -76,6 +77,23 @@ const AdminDiseases = () => {
     }
   }, [loading, diseases.length])
 
+  // Real-time search with debounce
+  useEffect(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+    }
+
+    const timer = setTimeout(() => {
+      loadDiseases(searchTerm.trim())
+    }, 500)
+
+    setDebounceTimer(timer)
+
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [searchTerm])
+
   const paginatedDiseases = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
@@ -84,12 +102,10 @@ const AdminDiseases = () => {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault()
-    loadDiseases(searchTerm.trim())
-  }
+  }, [searchTerm])
 
   const handleClearSearch = () => {
     setSearchTerm('')
-    loadDiseases('')
   }
 
   const handleAdd = () => {
@@ -213,7 +229,7 @@ const AdminDiseases = () => {
           <p>Quản lý danh sách bệnh lý da liễu</p>
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input
               type="text"
               placeholder="Tìm theo tên hoặc mã bệnh..."
@@ -221,15 +237,12 @@ const AdminDiseases = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e5e7eb', minWidth: 240 }}
             />
-            <button type="submit" className="btn">
-              Tìm kiếm
-            </button>
             {searchTerm && (
               <button type="button" className="btn" onClick={handleClearSearch}>
                 Xóa
               </button>
             )}
-          </form>
+          </div>
           <button className="btn btn-primary" onClick={handleAdd}>
             Thêm bệnh lý mới
           </button>
@@ -358,7 +371,7 @@ const AdminDiseases = () => {
               `}</style>
             </div>
           ) : diseases.length === 0 ? (
-            <p>Chưa có bệnh lý nào. Thêm bệnh lý mới để bắt đầu.</p>
+            <p>{searchTerm ? 'Không tìm thấy bệnh lý nào.' : 'Chưa có bệnh lý nào. Thêm bệnh lý mới để bắt đầu.'}</p>
           ) : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
