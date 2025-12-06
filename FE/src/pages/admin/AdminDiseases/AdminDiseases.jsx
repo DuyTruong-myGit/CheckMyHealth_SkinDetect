@@ -100,10 +100,6 @@ const AdminDiseases = () => {
     return diseases.slice(startIndex, endIndex)
   }, [diseases, currentPage, itemsPerPage])
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault()
-  }, [searchTerm])
-
   const handleClearSearch = () => {
     setSearchTerm('')
   }
