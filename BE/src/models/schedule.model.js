@@ -149,16 +149,22 @@ const scheduleModel = {
     // Lấy tất cả lịch trình (không filter theo ngày)
     getAll: async (userId) => {
         try {
+            const today = new Date().toISOString().split('T')[0];
             const sql = `
                 SELECT 
                     s.*,
+                    l.status as log_status,
+                    l.completed_at,
                     DATE_FORMAT(s.specific_date, '%Y-%m-%d') as specific_date
                 FROM schedules s
+                LEFT JOIN schedule_logs l 
+                    ON s.schedule_id = l.schedule_id 
+                    AND l.check_date = ?
                 WHERE s.user_id = ? 
                   AND s.is_active = TRUE
                 ORDER BY s.reminder_time ASC, s.title ASC
             `;
-            const [rows] = await pool.query(sql, [userId]);
+            const [rows] = await pool.query(sql, [today, userId]);
             return rows;
         } catch (error) {
             console.error('Error get all schedules:', error);
