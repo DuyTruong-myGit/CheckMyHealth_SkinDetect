@@ -42,7 +42,7 @@ const chatController = {
 
             // === SỬA LỖI: QUAY LẠI MODEL "gemini-pro-latest" ===
             // (Bạn đã xác nhận model này hoạt động)
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+            const model = genAI.getGenerativeModel({ model: "gemini-pro-latest" });
             // ===============================================
             
             // Tải Lịch sử Chat Cũ (giới hạn số lượt gần nhất để giảm tải)
