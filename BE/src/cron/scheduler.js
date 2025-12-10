@@ -6,6 +6,20 @@ const admin = require('firebase-admin');
 
 // ... (Phần khởi tạo Firebase giữ nguyên) ...
 // Code Firebase init của bạn ở đây...
+if (!admin.apps.length) {
+    let serviceAccount = null;
+    try {
+        if (process.env.FIREBASE_CREDENTIALS) {
+            serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+        } else {
+            try { serviceAccount = require('../firebase-admin-key.json'); } catch (e) {}
+        }
+        if (serviceAccount) {
+            admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+            console.log("🔥 Firebase Admin ready.");
+        }
+    } catch (error) { console.error("Firebase Error:", error.message); }
+}
 
 const getDbDay = (jsDay) => jsDay === 0 ? 8 : jsDay + 1;
 
