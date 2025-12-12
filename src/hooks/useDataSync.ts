@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StorageService } from '../utils/StorageService'; 
@@ -26,7 +25,7 @@ export const useDataSync = (deviceId: string) => {
       let token = await AsyncStorage.getItem('USER_TOKEN');
 
       if (!token) {
-          console.log("Checking pairing status for ID:", deviceId);
+          console.log("Kiểm tra ghép đôi ID:", deviceId);
           const statusRes = await fetch(`${API_URL}/watch/status/${deviceId}`);
           const statusData = await statusRes.json();
 
@@ -36,9 +35,7 @@ export const useDataSync = (deviceId: string) => {
 
               setUserName(statusData.user.fullName);
               token = statusData.token;
-              alert("Kết nối thành công với " + statusData.user.fullName);
           } else {
-              alert(`Chưa kết nối! Vui lòng mở App trên điện thoại và nhập ID: ${deviceId}`);
               setIsSyncing(false);
               return; 
           }
@@ -47,6 +44,7 @@ export const useDataSync = (deviceId: string) => {
       const unsyncedRecords = await StorageService.getUnsynced();
 
       if (unsyncedRecords.length > 0) {
+          console.log(`Đang đồng bộ ${unsyncedRecords.length} bản ghi...`);
           for (const record of unsyncedRecords) {
              const response = await fetch(`${API_URL}/watch/measurements`, {
                 method: 'POST',
@@ -70,7 +68,7 @@ export const useDataSync = (deviceId: string) => {
       setSyncStatus('SUCCESS');
 
     } catch (error) {
-      console.error("Sync Error:", error);
+      console.error("Lỗi đồng bộ:", error);
       setSyncStatus('ERROR');
     } finally {
       setIsSyncing(false);

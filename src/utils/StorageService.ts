@@ -32,7 +32,6 @@ export const StorageService = {
       );
 
       const serverItems = serverData.map(item => ({ ...item, isSynced: true }));
-      
       const mergedList = [...unsyncedItems, ...serverItems];
 
       mergedList.sort((a: any, b: any) => {
@@ -42,10 +41,8 @@ export const StorageService = {
       });
 
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
-      
       return mergedList;
     } catch (e) {
-      console.error("Lỗi sync cache:", e);
       return serverData;
     }
   },
@@ -68,5 +65,21 @@ export const StorageService = {
     const all = await StorageService.getLocalHistory();
     const updated = all.map((item: any) => ({ ...item, isSynced: true }));
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  },
+
+  // [MỚI] Hàm này dùng để đánh dấu 1 bản ghi cụ thể là đã gửi thành công
+  markAsSynced: async (id: string) => {
+    try {
+        const all = await StorageService.getLocalHistory();
+        const updated = all.map((item: any) => {
+            if (item.id === id) {
+                return { ...item, isSynced: true };
+            }
+            return item;
+        });
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+        console.error("Lỗi update status:", e);
+    }
   }
 };

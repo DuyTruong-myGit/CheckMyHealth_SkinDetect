@@ -4,10 +4,9 @@ import { DataService } from '../services/DataService';
 
 const AnalysisScreen = ({ navigation }: { navigation?: any }) => {
   const [loading, setLoading] = useState(true);
-  // Khởi tạo giá trị mặc định an toàn để tránh crash
   const [stats, setStats] = useState<any>({ 
-      today: { avgHeartRate: 0, avgSpO2: 0, avgStress: 0, avgSteps: 0, avgCalories: 0 }, 
-      yesterday: { avgHeartRate: 0, avgSpO2: 0, avgStress: 0, avgSteps: 0, avgCalories: 0 }, 
+      today: {}, 
+      yesterday: {}, 
       evaluation: { status: 'NO_DATA', msg: 'Đang tải...' } 
   });
 
@@ -36,11 +35,10 @@ const AnalysisScreen = ({ navigation }: { navigation?: any }) => {
   }, []);
 
   const renderTrend = (curr: number, prev: number, lowerIsBetter: boolean = false) => {
-    // Ép kiểu về số để tránh lỗi so sánh undefined
     const c = Number(curr) || 0;
     const p = Number(prev) || 0;
     
-    if (c === 0 || p === 0) return <Text style={{fontSize:9, color:'#888'}}>-</Text>;
+    if (c === 0 && p === 0) return <Text style={{fontSize:9, color:'#888'}}>-</Text>;
     
     const diff = c - p;
     if (diff === 0) return <Text style={{fontSize:9, color:'#888'}}>-</Text>;
@@ -52,13 +50,18 @@ const AnalysisScreen = ({ navigation }: { navigation?: any }) => {
     return <Text style={{fontSize:8, fontWeight:'bold', color}}>{arrow} {Math.abs(diff)}</Text>;
   };
 
-  const displayVal = (val: any) => (val && Number(val) > 0) ? val : '--';
+  const displayVal = (val: any) => (val && val !== 0 && val !== '--') ? val : '--';
 
-  const StatRow = ({ title, valToday, valYesterday, unit, lowerIsBetter }: any) => (
+  const StatRow = ({ title, valToday, valYesterday, unit, lowerIsBetter, isTime = false }: any) => (
     <View style={styles.statCard}>
         <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>{title}</Text>
-            {renderTrend(valToday, valYesterday, lowerIsBetter)}
+            {/* Nếu là thời gian, so sánh dựa trên số giây (isTime=true -> val là số giây) 
+                Nếu không, so sánh giá trị trực tiếp */}
+            {!isTime 
+               ? renderTrend(valToday, valYesterday, lowerIsBetter)
+               : renderTrend(stats.today?.totalDurationSec, stats.yesterday?.totalDurationSec, false)
+            }
         </View>
         <View style={styles.row}>
             <View style={styles.col}>
@@ -67,7 +70,9 @@ const AnalysisScreen = ({ navigation }: { navigation?: any }) => {
             </View>
             <View style={styles.col}>
                 <Text style={styles.label}>Hôm nay</Text>
-                <Text style={styles.valueNew}>{displayVal(valToday)} <Text style={{fontSize:8}}>{unit}</Text></Text>
+                <Text style={styles.valueNew}>
+                    {displayVal(valToday)} <Text style={{fontSize:8}}>{unit}</Text>
+                </Text>
             </View>
         </View>
     </View>
@@ -85,11 +90,16 @@ const AnalysisScreen = ({ navigation }: { navigation?: any }) => {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <StatRow title="❤️ Nhịp tim" valToday={stats.today?.avgHeartRate} valYesterday={stats.yesterday?.avgHeartRate} unit="bpm" lowerIsBetter={true} />
-            <StatRow title="💧 Oxy máu (SpO2)" valToday={stats.today?.avgSpO2} valYesterday={stats.yesterday?.avgSpO2} unit="%" lowerIsBetter={false} />
-            <StatRow title="⚡ Stress" valToday={stats.today?.avgStress} valYesterday={stats.yesterday?.avgStress} unit="" lowerIsBetter={true} />
-            <StatRow title="👣 Bước chân" valToday={stats.today?.avgSteps} valYesterday={stats.yesterday?.avgSteps} unit="" lowerIsBetter={false} />
-            <StatRow title="🔥 Calo tiêu thụ" valToday={stats.today?.avgCalories} valYesterday={stats.yesterday?.avgCalories} unit="cal" lowerIsBetter={false} />
+            {/* PHẦN SỨC KHỎE (TRUNG BÌNH) */}
+            <StatRow title="❤️ Nhịp tim TB" valToday={stats.today?.avgHeartRate} valYesterday={stats.yesterday?.avgHeartRate} unit="bpm" lowerIsBetter={true} />
+            <StatRow title="💧 Oxy máu TB" valToday={stats.today?.avgSpO2} valYesterday={stats.yesterday?.avgSpO2} unit="%" lowerIsBetter={false} />
+            <StatRow title="⚡ Stress TB" valToday={stats.today?.avgStress} valYesterday={stats.yesterday?.avgStress} unit="" lowerIsBetter={true} />
+            
+            {/* PHẦN LUYỆN TẬP (TỔNG CỘNG) */}
+            <StatRow title="👣 Tổng Bước chân" valToday={stats.today?.totalSteps} valYesterday={stats.yesterday?.totalSteps} unit="" lowerIsBetter={false} />
+            <StatRow title="🔥 Tổng Calo" valToday={stats.today?.totalCalories} valYesterday={stats.yesterday?.totalCalories} unit="cal" lowerIsBetter={false} />
+            {/* Dòng Thời gian tập: valToday là chuỗi hiển thị, so sánh dùng số giây ngầm */}
+            <StatRow title="⏱️ Thời gian tập" valToday={stats.today?.totalDurationDisplay} valYesterday={stats.yesterday?.totalDurationDisplay} unit="" lowerIsBetter={false} isTime={true} />
         </ScrollView>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>

@@ -1,39 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDataSync } from '../hooks/useDataSync';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const [deviceId, setDeviceId] = useState<string>('...');
   const { isSyncing, syncStatus, userName, syncData, resetLink } = useDataSync(deviceId);
+  
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const getID = async () => {
       let id = await AsyncStorage.getItem('MY_DEVICE_ID');
-      
-      // --- LOGIC TỰ ĐỘNG CẬP NHẬT ID MỚI ---
-      // Nếu chưa có ID HOẶC ID cũ không đủ 3 số (ví dụ số "6" cũ) -> Tạo mới
       if (!id || id.length < 3) {
-        // Tạo số ngẫu nhiên từ 100 đến 999 (đảm bảo luôn 3 chữ số)
         id = Math.floor(100 + Math.random() * 900).toString();
-        
-        // Lưu đè ID mới vào bộ nhớ
         await AsyncStorage.setItem('MY_DEVICE_ID', id);
       }
-      
       setDeviceId(id);
     };
     getID();
   }, []);
 
   useEffect(() => {
-    if (syncStatus === 'SUCCESS') {
-      Alert.alert("Thành công", "Đã kết nối và đồng bộ dữ liệu!");
-    } else if (syncStatus === 'ERROR') {
-      Alert.alert("Lỗi", "Không thể kết nối Server. Kiểm tra mạng.");
+    if (syncStatus === 'SUCCESS' || syncStatus === 'ERROR') {
+        setShowToast(true);
+        const timer = setTimeout(() => {
+            setShowToast(false);
+        }, 1500); 
+        return () => clearTimeout(timer);
     }
   }, [syncStatus]);
-
+  
   return (
     <View style={styles.mainWrapper}>
       <ScrollView 
@@ -44,7 +42,6 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
         
         <View style={[styles.idCircle, userName ? styles.idCircleLinked : {}]}>
           <Text style={styles.label}>ID KẾT NỐI</Text>
-          {/* Hiển thị ID với dấu thăng # */}
           <Text style={styles.idValue}>#{deviceId}</Text>
           <Text style={[styles.statusTag, userName ? {color: '#30D158'} : {color: '#999'}]}>
             {userName ? '● Online' : '○ Offline'}
@@ -88,6 +85,16 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
         <View style={{height: 60}} /> 
       </ScrollView>
 
+      {showToast && (
+        <View style={styles.toastOverlay}>
+            <View style={styles.toastBox}>
+                <Text style={styles.toastText}>
+                    {syncStatus === 'SUCCESS' ? 'Đã đồng bộ!' : 'Lỗi kết nối!'}
+                </Text>
+            </View>
+        </View>
+      )}
+
       <TouchableOpacity 
           style={styles.backBtn} 
           onPress={() => navigation.goBack()}
@@ -122,6 +129,35 @@ const styles = StyleSheet.create({
 
   linkAction: { marginBottom: 5 },
   linkActionText: { color: '#FF3B30', fontSize: 8, textDecorationLine: 'underline' },
+
+  toastOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)', 
+    zIndex: 999, 
+  },
+  toastBox: {
+    backgroundColor: 'white',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    minWidth: 100
+  },
+  toastText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center'
+  },
 
   backBtn: { 
     position: 'absolute', 
