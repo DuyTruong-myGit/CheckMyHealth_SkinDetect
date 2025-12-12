@@ -89,12 +89,35 @@ const WatchActivityPage = () => {
     load()
   }, [isAuthenticated, period])
 
+  // Reset to page 1 when period changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [period])
+
+  // Filter measurements by period
+  const filteredMeasurements = useMemo(() => {
+    if (period === 'all') return measurements
+
+    const now = new Date()
+    let cutoffDate = new Date()
+
+    if (period === 'today') {
+      cutoffDate.setHours(0, 0, 0, 0)
+    } else if (period === 'week') {
+      cutoffDate.setDate(now.getDate() - 7)
+    } else if (period === 'month') {
+      cutoffDate.setDate(now.getDate() - 30)
+    }
+
+    return measurements.filter(m => new Date(m.date) >= cutoffDate)
+  }, [measurements, period])
+
   // Paginated measurements slice
   const paginatedMeasurements = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return measurements.slice(startIndex, endIndex)
-  }, [measurements, currentPage, itemsPerPage])
+    return filteredMeasurements.slice(startIndex, endIndex)
+  }, [filteredMeasurements, currentPage, itemsPerPage])
 
   const formatDateTime = (value) => {
     if (!value) return 'N/A'
@@ -307,14 +330,14 @@ const WatchActivityPage = () => {
                   ))}
                 </div>
 
-                {measurements.length > 0 && (
+                {filteredMeasurements.length > 0 && (
                   <div style={{ marginTop: 16 }}>
                     <Pagination
                       currentPage={currentPage}
-                      totalPages={Math.max(1, Math.ceil(measurements.length / itemsPerPage))}
+                      totalPages={Math.max(1, Math.ceil(filteredMeasurements.length / itemsPerPage))}
                       onPageChange={setCurrentPage}
                       itemsPerPage={itemsPerPage}
-                      totalItems={measurements.length}
+                      totalItems={filteredMeasurements.length}
                       onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
                       customItemsPerPage={customItemsPerPage}
                       onCustomItemsPerPageChange={setCustomItemsPerPage}
