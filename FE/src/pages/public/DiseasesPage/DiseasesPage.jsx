@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import diseaseService from '../../../services/features/diseaseService.js'
-import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
+import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import showToast from '../../../utils/toast'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import '../../user/HistoryPage/History.css'
 
@@ -29,7 +30,7 @@ const DiseasesPage = () => {
       setCurrentPage(1)
     } catch (err) {
       console.error('Error loading diseases:', err)
-      setError('Lỗi khi tải danh sách bệnh lý')
+      showToast.error('Lỗi khi tải danh sách bệnh lý')
     } finally {
       setLoading(false)
     }
@@ -74,11 +75,11 @@ const DiseasesPage = () => {
               placeholder="Tìm kiếm theo tên bệnh, mã bệnh hoặc triệu chứng (ví dụ: ngứa, đỏ, phát ban)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ 
-                width: '100%', 
-                padding: '12px 16px', 
-                fontSize: 16, 
-                border: '1px solid #e5e7eb', 
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: 16,
+                border: '1px solid #e5e7eb',
                 borderRadius: 8,
                 transition: 'all 0.2s',
                 boxShadow: search ? '0 2px 8px rgba(0, 0, 0, 0.05)' : 'none'
@@ -115,9 +116,9 @@ const DiseasesPage = () => {
               </button>
             )}
           </div>
-          <p style={{ 
-            marginTop: 8, 
-            fontSize: 13, 
+          <p style={{
+            marginTop: 8,
+            fontSize: 13,
             color: '#6b7280',
             fontStyle: 'italic'
           }}>
@@ -126,14 +127,17 @@ const DiseasesPage = () => {
         </div>
 
         {loading ? (
-          <div className="history-loading">
-            <div className="history-spinner"></div>
-            <p>Đang tải...</p>
+          <div style={{ padding: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              <Skeleton variant="card" height="350px" count={6} />
+            </div>
           </div>
         ) : diseases.length === 0 ? (
-          <div className="history-empty">
-            <p>Không tìm thấy bệnh lý nào.</p>
-          </div>
+          <EmptyState
+            icon="🔍"
+            title="Không tìm thấy bệnh lý"
+            message={search ? `Không tìm thấy bệnh lý nào phù hợp với "${search}"` : 'Không có bệnh lý nào trong hệ thống.'}
+          />
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
@@ -179,9 +183,9 @@ const DiseasesPage = () => {
                     </p>
                   )}
                   {disease.symptoms && (
-                    <p style={{ 
-                      margin: '0 0 8px 0', 
-                      fontSize: 13, 
+                    <p style={{
+                      margin: '0 0 8px 0',
+                      fontSize: 13,
                       color: '#4b5563',
                       lineHeight: 1.5,
                       display: '-webkit-box',

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import '../AdminUsers/AdminUsers.css'
 import diseaseService from '../../../services/features/diseaseService.js'
 import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
+import showToast from '../../../utils/toast'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
 const AdminEditDisease = () => {
@@ -10,7 +11,7 @@ const AdminEditDisease = () => {
   const { id } = useParams()
   const isEditMode = !!id
   usePageTitle(isEditMode ? 'Chỉnh sửa bệnh lý' : 'Thêm bệnh lý mới')
-  
+
   const [loading, setLoading] = useState(isEditMode)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -64,7 +65,7 @@ const AdminEditDisease = () => {
       setImageFile(null)
     } catch (err) {
       console.error('Failed to load disease:', err)
-      setError('Lỗi khi tải thông tin bệnh lý')
+      showToast.error('Lỗi khi tải thông tin bệnh lý')
     } finally {
       setLoading(false)
     }
@@ -86,7 +87,7 @@ const AdminEditDisease = () => {
   const handleImageUrlChange = (event) => {
     const url = event.target.value.trim()
     setFormData((prev) => ({ ...prev, image_url: url }))
-    
+
     if (url) {
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview)
@@ -111,7 +112,7 @@ const AdminEditDisease = () => {
 
   const handleSave = async () => {
     if (!formData.disease_code || !formData.disease_name_vi) {
-      setError('Vui lòng nhập mã bệnh và tên bệnh')
+      showToast.warning('Vui lòng nhập mã bệnh và tên bệnh')
       return
     }
 
@@ -133,15 +134,17 @@ const AdminEditDisease = () => {
 
       if (isEditMode) {
         await diseaseService.update(id, payload)
+        showToast.success('Cập nhật bệnh lý thành công!')
       } else {
         await diseaseService.create(payload)
+        showToast.success('Thêm bệnh lý mới thành công!')
       }
-      
+
       // Navigate back to diseases list
       navigate('/admin/diseases')
     } catch (err) {
       console.error('Failed to save disease:', err)
-      setError(err.response?.data?.message || 'Lỗi khi lưu bệnh lý')
+      showToast.error(err.response?.data?.message || 'Lỗi khi lưu bệnh lý')
     } finally {
       setSaving(false)
     }
@@ -209,8 +212,8 @@ const AdminEditDisease = () => {
             <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>Ảnh minh họa</label>
             {imagePreview ? (
               <div style={{ marginBottom: 8, background: '#f9fafb', borderRadius: 6, border: '1px solid #e5e7eb', padding: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-                <ImageViewer 
-                  src={imagePreview} 
+                <ImageViewer
+                  src={imagePreview}
                   alt="Xem trước ảnh bệnh"
                   className="disease-image-preview"
                 />

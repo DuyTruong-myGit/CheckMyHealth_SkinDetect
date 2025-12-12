@@ -1,4 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import MainLayout from './layouts/MainLayout.jsx'
 import ProtectedRoute from './components/common/ProtectedRoute/ProtectedRoute.jsx'
@@ -45,105 +47,108 @@ import './App.css'
 
 function App() {
   return (
-    <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/auth/callback" element={<GoogleCallbackPage />} />
-        <Route 
-          path="/diagnosis" 
+    <>
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/callback" element={<GoogleCallbackPage />} />
+          <Route
+            path="/diagnosis"
+            element={
+              <ProtectedRoute>
+                <DiagnosisPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/diseases" element={<DiseasesPage />} />
+          <Route path="/diseases/compare" element={<DiseaseComparePage />} />
+          <Route path="/diseases/:id" element={<DiseaseDetailPage />} />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute>
+                <SchedulePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <FeedbackPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/watch-activity"
+            element={
+              <ProtectedRoute>
+                <WatchActivityPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <MapPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+        <Route
+          path="/admin"
           element={
-            <ProtectedRoute>
-              <DiagnosisPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/news" element={<NewsPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/faq" element={<FAQPage />} />
-        <Route 
-          path="/history" 
-          element={
-            <ProtectedRoute>
-              <HistoryPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/chat" 
-          element={
-            <ProtectedRoute>
-              <ChatPage />
+            <ProtectedRoute requireAdmin={true}>
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
-        <Route path="/diseases" element={<DiseasesPage />} />
-        <Route path="/diseases/compare" element={<DiseaseComparePage />} />
-        <Route path="/diseases/:id" element={<DiseaseDetailPage />} />
-        <Route 
-          path="/schedule" 
-          element={
-            <ProtectedRoute>
-              <SchedulePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route 
-          path="/feedback" 
-          element={
-            <ProtectedRoute>
-              <FeedbackPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route 
-          path="/watch-activity"
-          element={
-            <ProtectedRoute>
-              <WatchActivityPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route 
-          path="/map" 
-          element={
-            <ProtectedRoute>
-              <MapPage />
-            </ProtectedRoute>
-          }
-        />
-      </Route>
-      <Route 
-        path="/admin" 
-        element={
-          <ProtectedRoute requireAdmin={true}>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="news" element={<AdminNews />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="users/:userId/history" element={<AdminUserHistoryPage />} />
-        <Route path="feedback" element={<AdminFeedback />} />
-        <Route path="reports" element={<AdminReports />} />
-        <Route path="diseases" element={<AdminDiseases />} />
-        <Route path="diseases/new" element={<AdminEditDisease />} />
-        <Route path="diseases/:id/edit" element={<AdminEditDisease />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="news" element={<AdminNews />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="users/:userId/history" element={<AdminUserHistoryPage />} />
+          <Route path="feedback" element={<AdminFeedback />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="diseases" element={<AdminDiseases />} />
+          <Route path="diseases/new" element={<AdminEditDisease />} />
+          <Route path="diseases/:id/edit" element={<AdminEditDisease />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <ToastContainer />
+    </>
   )
 }
 

@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import '../AdminUsers/AdminUsers.css'
 import newsService from '../../../services/features/newsService.js'
-import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
+import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import showToast from '../../../utils/toast'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
@@ -56,11 +57,12 @@ const AdminNews = () => {
       await newsService.createSource(url, label)
       setUrl('')
       setLabel('')
+      showToast.success('Đã thêm nguồn tin thành công!')
       // Reload sources
       await loadSources()
     } catch (err) {
       console.error('Failed to add source:', err)
-      setError(err.response?.data?.message || 'Lỗi khi thêm nguồn tin')
+      showToast.error(err.response?.data?.message || 'Lỗi khi thêm nguồn tin')
     }
   }
 
@@ -68,11 +70,12 @@ const AdminNews = () => {
     try {
       setError('')
       await newsService.deleteSource(id)
+      showToast.success('Đã xóa nguồn tin!')
       // Reload sources
       await loadSources()
     } catch (err) {
       console.error('Failed to delete source:', err)
-      setError(err.response?.data?.message || 'Lỗi khi xóa nguồn tin')
+      showToast.error(err.response?.data?.message || 'Lỗi khi xóa nguồn tin')
     }
   }
 
@@ -130,19 +133,15 @@ const AdminNews = () => {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid rgba(102, 126, 234, 0.2)', borderTop: '3px solid #667eea', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-            <p style={{ marginTop: 12, color: '#718096' }}>Đang tải...</p>
-            <style>{`
-              @keyframes spin {
-                to {
-                  transform: rotate(360deg);
-                }
-              }
-            `}</style>
+          <div style={{ padding: '2rem' }}>
+            <Skeleton variant="rectangular" height="300px" />
           </div>
         ) : sources.length === 0 ? (
-          <p>Chưa có nguồn tin nào. Thêm URL để hiển thị trên trang Tin tức.</p>
+          <EmptyState
+            icon="📰"
+            title="Chưa có nguồn tin"
+            message="Chưa có nguồn tin nào. Thêm URL để hiển thị trên trang Tin tức."
+          />
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

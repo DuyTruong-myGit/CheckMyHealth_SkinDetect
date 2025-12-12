@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import { getWatchMeasurements, getWatchStats } from '../../../services/features/watchService.js'
-import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
+import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import showToast from '../../../utils/toast'
 
 const WatchActivityPage = () => {
   usePageTitle('Lịch sử hoạt động đồng hồ')
@@ -171,9 +172,15 @@ const WatchActivityPage = () => {
         {error && <div className="history-error">{error}</div>}
 
         {loading ? (
-          <div className="history-loading">
-            <div className="history-spinner" />
-            <p>Đang tải...</p>
+          <div style={{ padding: '2rem' }}>
+            <Skeleton variant="title" width="30%" />
+            <Skeleton variant="text" count={3} />
+            <div style={{ marginTop: '2rem' }}>
+              <Skeleton variant="rectangular" height="120px" />
+            </div>
+            <div style={{ marginTop: '1rem' }}>
+              <Skeleton variant="card" count={2} />
+            </div>
           </div>
         ) : (
           <>
@@ -251,13 +258,11 @@ const WatchActivityPage = () => {
             )}
 
             {measurements.length === 0 ? (
-              <div className="history-empty">
-                <p>Bạn chưa có dữ liệu hoạt động nào từ smartwatch.</p>
-                <p>
-                  Hãy đảm bảo ứng dụng watch của bạn đã kết nối và gửi dữ liệu
-                  về hệ thống.
-                </p>
-              </div>
+              <EmptyState
+                icon="⌚"
+                title="Chưa có dữ liệu hoạt động"
+                message="Bạn chưa có dữ liệu hoạt động nào từ smartwatch. Hãy đảm bảo ứng dụng watch của bạn đã kết nối và gửi dữ liệu về hệ thống."
+              />
             ) : (
               <>
                 <div className="history-list">

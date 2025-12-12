@@ -4,6 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { diagnose } from '../../../services/features/diagnosisService.js'
 import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
+import showToast from '../../../utils/toast'
 import './Diagnosis.css'
 
 const DiagnosisPage = () => {
@@ -28,13 +29,13 @@ const DiagnosisPage = () => {
   const processFile = (file) => {
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setError('Vui lòng chọn file ảnh (JPG, PNG, GIF, v.v.)')
+      showToast.error('Vui lòng chọn file ảnh (JPG, PNG, GIF, v.v.)')
       return
     }
-    
+
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      setError('Kích thước file không được vượt quá 10MB')
+      showToast.error('Kích thước file không được vượt quá 10MB')
       return
     }
 
@@ -74,9 +75,9 @@ const DiagnosisPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!selectedFile) {
-      setError('Vui lòng chọn ảnh cần chuẩn đoán')
+      showToast.warning('Vui lòng chọn ảnh cần chuẩn đoán')
       return
     }
 
@@ -90,11 +91,14 @@ const DiagnosisPage = () => {
       const diagnosisResult = await diagnose(selectedFile)
       console.log('Diagnosis result:', diagnosisResult)
       setResult(diagnosisResult)
+      showToast.success('Chuẩn đoán thành công!')
     } catch (err) {
       const errorMsg = err?.message || err?.toString?.() || 'Chuẩn đoán thất bại. Vui lòng thử lại.'
       console.error('Diagnosis failed:', errorMsg)
-      setError(errorMsg)
-      setErrorRecommendation(err?.recommendation || '')
+      showToast.error(errorMsg)
+      if (err?.recommendation) {
+        showToast.info(err.recommendation, { autoClose: 5000 })
+      }
     } finally {
       setLoading(false)
     }
@@ -144,7 +148,7 @@ const DiagnosisPage = () => {
 
         {!result ? (
           <form onSubmit={handleSubmit} className="diagnosis-form">
-            <div 
+            <div
               className={`diagnosis-upload-area ${dragActive ? 'diagnosis-upload-area--active' : ''}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -154,8 +158,8 @@ const DiagnosisPage = () => {
               {preview ? (
                 <div className="diagnosis-preview">
                   <ImageViewer src={preview} alt="Preview" />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleReset}
                     className="diagnosis-remove-btn"
                   >
@@ -184,8 +188,8 @@ const DiagnosisPage = () => {
               )}
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="diagnosis-submit-btn"
               disabled={!selectedFile || loading}
             >
@@ -202,7 +206,7 @@ const DiagnosisPage = () => {
         ) : (
           <div className="diagnosis-result">
             <h2>Kết quả chuẩn đoán</h2>
-            
+
             {result.image_url && (
               <div className="diagnosis-result-image">
                 <ImageViewer src={result.image_url} alt="Diagnosed" />
@@ -210,7 +214,7 @@ const DiagnosisPage = () => {
             )}
 
             <div className="diagnosis-result-content">
-            {result.disease_name && (
+              {result.disease_name && (
                 <div className="diagnosis-result-item diagnosis-result-item--disease">
                   <span className="diagnosis-result-label">Bệnh:</span>
                   <span className="diagnosis-result-value">{result.disease_name}</span>
@@ -221,7 +225,7 @@ const DiagnosisPage = () => {
                 <div className="diagnosis-result-item diagnosis-result-item--confidence">
                   <span className="diagnosis-result-label">Độ tin cậy:</span>
                   <div className="diagnosis-confidence-bar">
-                    <div className="diagnosis-confidence-fill" style={{width: `${result.confidence_score * 100}%`}}></div>
+                    <div className="diagnosis-confidence-fill" style={{ width: `${result.confidence_score * 100}%` }}></div>
                     <span className="diagnosis-result-value">
                       {(result.confidence_score * 100).toFixed(1)}%
                     </span>
@@ -248,13 +252,13 @@ const DiagnosisPage = () => {
               )}
 
               <div className="diagnosis-result-actions">
-                <button 
+                <button
                   onClick={handleReset}
                   className="diagnosis-new-btn"
                 >
                   Chuẩn đoán ảnh khác
                 </button>
-                <button 
+                <button
                   onClick={handleViewHistory}
                   className="diagnosis-history-btn"
                 >

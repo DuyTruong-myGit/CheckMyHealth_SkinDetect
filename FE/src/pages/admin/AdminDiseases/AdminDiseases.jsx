@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../AdminUsers/AdminUsers.css'
 import diseaseService from '../../../services/features/diseaseService.js'
-import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
+import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import showToast from '../../../utils/toast'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
@@ -46,7 +47,7 @@ const AdminDiseases = () => {
     const savedPage = sessionStorage.getItem('adminDiseases_page')
     const savedScroll = sessionStorage.getItem('adminDiseases_scroll')
     const savedSearch = sessionStorage.getItem('adminDiseases_search')
-    
+
     if (savedPage) {
       setCurrentPage(parseInt(savedPage, 10))
     }
@@ -56,7 +57,7 @@ const AdminDiseases = () => {
     } else {
       loadDiseases('', !!savedPage)
     }
-    
+
     // Clean up saved state
     if (savedPage) {
       sessionStorage.removeItem('adminDiseases_page')
@@ -120,10 +121,11 @@ const AdminDiseases = () => {
     try {
       setError('')
       await diseaseService.delete(id)
+      showToast.success('Đã xóa bệnh lý thành công!')
       await loadDiseases()
     } catch (err) {
       console.error('Failed to delete disease:', err)
-      setError(err.response?.data?.message || 'Lỗi khi xóa bệnh lý')
+      showToast.error(err.response?.data?.message || 'Lỗi khi xóa bệnh lý')
     }
   }
 
@@ -149,7 +151,8 @@ const AdminDiseases = () => {
       setError('')
       await diseaseService.exportAll('csv')
     } catch (err) {
-      setError(err.message || 'Lỗi khi export dữ liệu')
+      const errorMessage = err.message || 'Lỗi khi export dữ liệu'
+      showToast.error(errorMessage)
     }
   }
 
@@ -158,7 +161,7 @@ const AdminDiseases = () => {
       setError('')
       await diseaseService.exportSample('csv')
     } catch (err) {
-      setError(err.message || 'Lỗi khi export template')
+      showToast.error(err.message || 'Lỗi khi export template')
     }
   }
 
@@ -185,7 +188,7 @@ const AdminDiseases = () => {
       // Reset file input
       const fileInput = document.getElementById('import-file-input')
       if (fileInput) fileInput.value = ''
-      
+
       // Luôn hiển thị kết quả, có thể có duplicates
       if (result.duplicates && result.duplicates.length > 0) {
         setImportResult({
@@ -203,14 +206,14 @@ const AdminDiseases = () => {
           total: result.total
         })
       }
-      
+
       // Reload danh sách nếu có import thành công
       if (result.imported > 0) {
         await loadDiseases()
       }
     } catch (err) {
       const errorMessage = err.message || 'Lỗi khi import dữ liệu'
-      setError(errorMessage)
+      showToast.error(errorMessage)
       setImportResult(null)
     } finally {
       setImporting(false)
@@ -252,170 +255,168 @@ const AdminDiseases = () => {
       )}
 
       <div style={{ marginBottom: 16 }}>
-          <div style={{ background: '#f7fafc', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-            <button
-              onClick={() => setImportExportExpanded(!importExportExpanded)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontWeight: 600,
-                color: '#4a5568',
-                fontSize: '0.95rem'
-              }}
-            >
-              <span>Import / Export</span>
-              <span style={{ fontSize: '0.8rem', transition: 'transform 0.2s', transform: importExportExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                ▼
-              </span>
-            </button>
-            {importExportExpanded && (
-              <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Export:</span>
-                  <button className="btn" onClick={handleExportAll} style={{ fontSize: '0.9rem' }}>
-                    Export CSV
-                  </button>
-                  <span style={{ margin: '0 8px', color: '#cbd5e0' }}>|</span>
-                  <button className="btn" onClick={handleExportSample} style={{ fontSize: '0.9rem' }}>
-                    Template CSV
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Import:</span>
-                  <input
-                    id="import-file-input"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleImportFileChange}
-                    style={{ fontSize: '0.9rem' }}
-                  />
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={handleImport}
-                    disabled={!importFile || importing}
-                    style={{ fontSize: '0.9rem' }}
-                  >
-                    {importing ? 'Đang import...' : 'Import'}
-                  </button>
-                </div>
-                {importResult && (
-                  <div style={{ 
-                    padding: '12px', 
-                    borderRadius: 6, 
-                    background: importResult.type === 'duplicates' ? '#fff3cd' : '#d1e7dd',
-                    border: `1px solid ${importResult.type === 'duplicates' ? '#ffc107' : '#28a745'}`
-                  }}>
-                    {importResult.type === 'duplicates' ? (
-                      <div>
-                        <div style={{ fontWeight: 600, marginBottom: 8, color: '#856404' }}>
-                          {importResult.imported > 0 ? (
-                            <>✓ Đã import {importResult.imported} bệnh lý. Phát hiện {importResult.duplicates_count} bệnh trùng lặp:</>
-                          ) : (
-                            <>Phát hiện {importResult.duplicates_count} bệnh trùng lặp:</>
-                          )}
-                        </div>
-                        <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 8 }}>
-                          <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ background: '#f8f9fa' }}>
-                                <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Mã bệnh</th>
-                                <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Tên bệnh (Import)</th>
-                                <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Tên bệnh (Hiện có)</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {importResult.duplicates.map((dup, idx) => (
-                                <tr key={idx}>
-                                  <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.disease_code}</td>
-                                  <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.disease_name_vi}</td>
-                                  <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.existing_name || 'N/A'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: '#856404' }}>
-                          Tổng: {importResult.total} | Trùng: {importResult.duplicates_count} | Đã import: {importResult.imported}
-                        </div>
+        <div style={{ background: '#f7fafc', borderRadius: 8, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          <button
+            onClick={() => setImportExportExpanded(!importExportExpanded)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontWeight: 600,
+              color: '#4a5568',
+              fontSize: '0.95rem'
+            }}
+          >
+            <span>Import / Export</span>
+            <span style={{ fontSize: '0.8rem', transition: 'transform 0.2s', transform: importExportExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+              ▼
+            </span>
+          </button>
+          {importExportExpanded && (
+            <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Export:</span>
+                <button className="btn" onClick={handleExportAll} style={{ fontSize: '0.9rem' }}>
+                  Export CSV
+                </button>
+                <span style={{ margin: '0 8px', color: '#cbd5e0' }}>|</span>
+                <button className="btn" onClick={handleExportSample} style={{ fontSize: '0.9rem' }}>
+                  Template CSV
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600, color: '#4a5568', minWidth: 80 }}>Import:</span>
+                <input
+                  id="import-file-input"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportFileChange}
+                  style={{ fontSize: '0.9rem' }}
+                />
+                <button
+                  className="btn btn-primary"
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  style={{ fontSize: '0.9rem' }}
+                >
+                  {importing ? 'Đang import...' : 'Import'}
+                </button>
+              </div>
+              {importResult && (
+                <div style={{
+                  padding: '12px',
+                  borderRadius: 6,
+                  background: importResult.type === 'duplicates' ? '#fff3cd' : '#d1e7dd',
+                  border: `1px solid ${importResult.type === 'duplicates' ? '#ffc107' : '#28a745'}`
+                }}>
+                  {importResult.type === 'duplicates' ? (
+                    <div>
+                      <div style={{ fontWeight: 600, marginBottom: 8, color: '#856404' }}>
+                        {importResult.imported > 0 ? (
+                          <>✓ Đã import {importResult.imported} bệnh lý. Phát hiện {importResult.duplicates_count} bệnh trùng lặp:</>
+                        ) : (
+                          <>Phát hiện {importResult.duplicates_count} bệnh trùng lặp:</>
+                        )}
                       </div>
-                    ) : (
-                      <div style={{ color: '#155724', fontWeight: 500 }}>
-                        ✓ Import thành công {importResult.imported} bệnh lý (tổng {importResult.total} dòng)
+                      <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 8 }}>
+                        <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: '#f8f9fa' }}>
+                              <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Mã bệnh</th>
+                              <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Tên bệnh (Import)</th>
+                              <th style={{ padding: '6px', textAlign: 'left', borderBottom: '1px solid #dee2e6', border: '1px solid #dee2e6' }}>Tên bệnh (Hiện có)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importResult.duplicates.map((dup, idx) => (
+                              <tr key={idx}>
+                                <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.disease_code}</td>
+                                <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.disease_name_vi}</td>
+                                <td style={{ padding: '6px', border: '1px solid #f0f0f0' }}>{dup.existing_name || 'N/A'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#856404' }}>
+                        Tổng: {importResult.total} | Trùng: {importResult.duplicates_count} | Đã import: {importResult.imported}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ color: '#155724', fontWeight: 500 }}>
+                      ✓ Import thành công {importResult.imported} bệnh lý (tổng {importResult.total} dòng)
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: '2rem' }}>
+          <Skeleton variant="rectangular" height="400px" />
+        </div>
+      ) : diseases.length === 0 ? (
+        <EmptyState
+          icon="💡"
+          title={searchTerm ? 'Không tìm thấy' : 'Chưa có bệnh lý'}
+          message={searchTerm ? 'Không tìm thấy bệnh lý nào.' : 'Chưa có bệnh lý nào. Thêm bệnh lý mới để bắt đầu.'}
+        />
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {paginatedDiseases.map((d) => (
+              <div key={d.info_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, border: '1px solid #e5e7eb', borderRadius: 6, gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                  {d.image_url && (
+                    <div style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img
+                        src={d.image_url}
+                        alt={d.disease_name_vi}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{d.disease_name_vi}</div>
+                    <div style={{ color: '#6b7280', fontSize: 14 }}>Mã: {d.disease_code || 'N/A'}</div>
+                    {d.description && (
+                      <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 4, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {d.description}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn" onClick={() => handleEdit(d)}>Sửa</button>
+                  <button className="btn" onClick={() => openConfirm(d.info_id, d.disease_name_vi)}>Xóa</button>
+                </div>
               </div>
-            )}
+            ))}
           </div>
-        </div>
 
-      {loading ? (
-            <div style={{ textAlign: 'center', padding: 32 }}>
-              <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid rgba(102, 126, 234, 0.2)', borderTop: '3px solid #667eea', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-              <p style={{ marginTop: 12, color: '#718096' }}>Đang tải...</p>
-              <style>{`
-                @keyframes spin {
-                  to { transform: rotate(360deg); }
-                }
-              `}</style>
-            </div>
-          ) : diseases.length === 0 ? (
-            <p>{searchTerm ? 'Không tìm thấy bệnh lý nào.' : 'Chưa có bệnh lý nào. Thêm bệnh lý mới để bắt đầu.'}</p>
-          ) : (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {paginatedDiseases.map((d) => (
-                  <div key={d.info_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, border: '1px solid #e5e7eb', borderRadius: 6, gap: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-                      {d.image_url && (
-                        <div style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <img
-                            src={d.image_url}
-                            alt={d.disease_name_vi}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                          />
-                        </div>
-                      )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{d.disease_name_vi}</div>
-                        <div style={{ color: '#6b7280', fontSize: 14 }}>Mã: {d.disease_code || 'N/A'}</div>
-                        {d.description && (
-                          <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 4, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {d.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn" onClick={() => handleEdit(d)}>Sửa</button>
-                      <button className="btn" onClick={() => openConfirm(d.info_id, d.disease_name_vi)}>Xóa</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {diseases.length > 0 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={Math.max(1, Math.ceil(diseases.length / itemsPerPage))}
-                  onPageChange={setCurrentPage}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={diseases.length}
-                  onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
-                  customItemsPerPage={customItemsPerPage}
-                  onCustomItemsPerPageChange={setCustomItemsPerPage}
-                  itemLabel="bệnh lý"
-                />
-              )}
-            </>
+          {diseases.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.max(1, Math.ceil(diseases.length / itemsPerPage))}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={diseases.length}
+              onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
+              customItemsPerPage={customItemsPerPage}
+              onCustomItemsPerPageChange={setCustomItemsPerPage}
+              itemLabel="bệnh lý"
+            />
           )}
+        </>
+      )}
 
       <ConfirmDialog
         isOpen={confirmOpen}

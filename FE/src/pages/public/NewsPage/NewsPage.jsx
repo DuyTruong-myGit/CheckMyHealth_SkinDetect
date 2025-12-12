@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import '../../user/HistoryPage/History.css'
 import newsService from '../../../services/features/newsService.js'
-import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
+import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import showToast from '../../../utils/toast'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
 const NewsPage = () => {
@@ -24,7 +25,7 @@ const NewsPage = () => {
       return data || []
     } catch (err) {
       console.error('Error loading sources:', err)
-      setError('Lỗi khi tải danh sách nguồn tin')
+      showToast.error('Lỗi khi tải danh sách nguồn tin')
       return []
     }
   }
@@ -48,7 +49,7 @@ const NewsPage = () => {
         }
         return 0
       }
-      
+
       const timestampA = getTimestamp(a)
       const timestampB = getTimestamp(b)
       return timestampB - timestampA // Newest to oldest
@@ -91,7 +92,7 @@ const NewsPage = () => {
       }
     } catch (err) {
       console.error('Error scraping articles:', err)
-      setError(err.message || 'Lỗi khi tải tin tức')
+      showToast.error(err.message || 'Lỗi khi tải tin tức')
     } finally {
       setLoading(false)
     }
@@ -128,74 +129,85 @@ const NewsPage = () => {
         )}
 
         {loading && (
-          <div style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ display: 'inline-block', width: 40, height: 40, border: '3px solid rgba(102, 126, 234, 0.2)', borderTop: '3px solid #667eea', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-            <p style={{ marginTop: 12, color: '#718096' }}>Đang tải bài báo...</p>
+          <div style={{ padding: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              <Skeleton variant="card" height="300px" count={6} />
+            </div>
           </div>
         )}
 
         {!loading && sources.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 32, color: '#718096' }}>
-            <p>Chưa có nguồn tin nào. Vui lòng liên hệ admin để thêm.</p>
-          </div>
+          <EmptyState
+            icon="📰"
+            title="Chưa có nguồn tin"
+            message="Chưa có nguồn tin nào. Vui lòng liên hệ admin để thêm nguồn tin y tế."
+          />
+        )}
+
+        {!loading && sources.length > 0 && articles.length === 0 && !error && (
+          <EmptyState
+            icon="📭"
+            title="Chưa có bài báo"
+            message="Chưa tải được bài báo từ các nguồn tin. Vui lòng thử lại sau."
+          />
         )}
 
         {!loading && articles.length > 0 && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
               {paginatedArticles.map((article) => (
-              <a
-                key={article.id}
-                href={article.link}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  background: 'white',
-                  transition: 'all 0.2s',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                }}
-              >
-                {article.image && (
-                  <div style={{ width: '100%', height: 160, overflow: 'hidden', background: '#f3f4f6' }}>
-                    <img
-                      src={article.image}
-                      alt={article.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.target.style.display = 'none'
-                      }}
-                    />
-                  </div>
-                )}
-                <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600, color: '#1a202c', lineHeight: 1.4 }}>
-                    {article.title}
-                  </h3>
-                  {article.description && (
-                    <p style={{ margin: '0 0 8px 0', fontSize: 13, color: '#4a5568', lineHeight: 1.4, flex: 1 }}>
-                      {article.description}
-                    </p>
+                <a
+                  key={article.id}
+                  href={article.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    background: 'white',
+                    transition: 'all 0.2s',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  {article.image && (
+                    <div style={{ width: '100%', height: 160, overflow: 'hidden', background: '#f3f4f6' }}>
+                      <img
+                        src={article.image}
+                        alt={article.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </div>
                   )}
-                  <div style={{ marginTop: 'auto', fontSize: 12, color: '#a0aec0' }}>
-                    Nguồn: {article.source}
+                  <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600, color: '#1a202c', lineHeight: 1.4 }}>
+                      {article.title}
+                    </h3>
+                    {article.description && (
+                      <p style={{ margin: '0 0 8px 0', fontSize: 13, color: '#4a5568', lineHeight: 1.4, flex: 1 }}>
+                        {article.description}
+                      </p>
+                    )}
+                    <div style={{ marginTop: 'auto', fontSize: 12, color: '#a0aec0' }}>
+                      Nguồn: {article.source}
+                    </div>
                   </div>
-                </div>
-              </a>
+                </a>
               ))}
             </div>
 

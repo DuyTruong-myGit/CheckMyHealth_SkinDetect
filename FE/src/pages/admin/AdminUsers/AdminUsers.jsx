@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { getUsers, createUser, updateUserRole, updateUserStatus } from '../../../services/features/adminService.js'
 import { formatDateAndTime } from '../../../utils/format.js'
 import SortableTableHeader from '../../../components/ui/SortableTableHeader/SortableTableHeader.jsx'
-import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
+import { Pagination, Skeleton } from '../../../components/ui'
+import showToast from '../../../utils/toast'
 import AddUserModal from '../../../components/features/admin/AddUserModal/AddUserModal.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
@@ -45,7 +46,7 @@ const AdminUsers = () => {
   useEffect(() => {
     let isMounted = true
     setState(prev => ({ ...prev, loading: true }))
-    
+
     getUsers(searchTerm)
       .then((data) => {
         if (isMounted) {
@@ -64,7 +65,7 @@ const AdminUsers = () => {
   // Sort data
   const sortedData = useMemo(() => {
     const sorted = [...state.data]
-    
+
     sorted.sort((a, b) => {
       let aValue = a[sortConfig.column]
       let bValue = b[sortConfig.column]
@@ -115,21 +116,9 @@ const AdminUsers = () => {
       setState({ loading: false, data, error: null })
       setShowAddModal(false)
       setCurrentPage(1)
-      setConfirmState({
-        isOpen: true,
-        title: 'Tạo người dùng thành công',
-        message: 'Người dùng mới đã được thêm vào hệ thống.',
-        type: 'default',
-        onConfirm: () => setConfirmState(prev => ({ ...prev, isOpen: false })),
-      })
+      showToast.success('Tạo người dùng thành công!')
     } catch (error) {
-      setConfirmState({
-        isOpen: true,
-        title: 'Lỗi khi tạo người dùng',
-        message: error.message || 'Không thể tạo người dùng',
-        type: 'danger',
-        onConfirm: () => setConfirmState(prev => ({ ...prev, isOpen: false })),
-      })
+      showToast.error(error.message || 'Không thể tạo người dùng')
     } finally {
       setAddUserLoading(false)
     }
@@ -157,23 +146,9 @@ const AdminUsers = () => {
           await updateUserRole(userId, newRole)
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
-          setConfirmState(prev => ({
-            ...prev,
-            isOpen: true,
-            title: 'Cập nhật quyền thành công',
-            message: `Đã ${isPromote ? 'thăng cấp' : 'giáng cấp'} quyền cho ${userName}.`,
-            type: 'default',
-            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
-          }))
+          showToast.success(`Đã ${isPromote ? 'thăng cấp' : 'giáng cấp'} quyền cho ${userName}`)
         } catch (error) {
-          setConfirmState(prev => ({
-            ...prev,
-            isOpen: true,
-            title: 'Lỗi khi cập nhật quyền',
-            message: error.message || 'Không thể thay đổi quyền',
-            type: 'danger',
-            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
-          }))
+          showToast.error(error.message || 'Không thể thay đổi quyền')
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
         } finally {
@@ -197,23 +172,9 @@ const AdminUsers = () => {
           await updateUserStatus(userId, newStatus)
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
-          setConfirmState(prev => ({
-            ...prev,
-            isOpen: true,
-            title: 'Cập nhật trạng thái thành công',
-            message: `Đã ${statusText} tài khoản của ${userName}.`,
-            type: 'default',
-            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
-          }))
+          showToast.success(`Đã ${statusText} tài khoản của ${userName}`)
         } catch (error) {
-          setConfirmState(prev => ({
-            ...prev,
-            isOpen: true,
-            title: 'Lỗi khi cập nhật trạng thái',
-            message: error.message || 'Không thể thay đổi trạng thái',
-            type: 'danger',
-            onConfirm: () => setConfirmState(p => ({ ...p, isOpen: false })),
-          }))
+          showToast.error(error.message || 'Không thể thay đổi trạng thái')
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
         } finally {
@@ -230,8 +191,8 @@ const AdminUsers = () => {
           <h1>Người dùng</h1>
           <p>Danh sách khách hàng và nhân viên đang hoạt động.</p>
         </div>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           type="button"
           onClick={() => setShowAddModal(true)}
         >
@@ -250,8 +211,14 @@ const AdminUsers = () => {
         />
       </div>
 
-      {state.loading && <p>Đang tải danh sách người dùng...</p>}
-      {state.error && <p className="error-text">Không thể tải: {state.error}</p>}
+      {state.loading && (
+        <div style={{ padding: '2rem' }}>
+          <Skeleton variant="rectangular" height="400px" />
+        </div>
+      )}
+      {state.error && (
+        <p className="error-text">Không thể tải: {state.error}</p>
+      )}
 
       {!state.loading && !state.error && (
         <>
