@@ -21,9 +21,9 @@ const WatchActivityPage = () => {
   const calculateStats = (measurements) => {
     if (!measurements || measurements.length === 0) return null
 
-    const heartRates = measurements.map(m => m.heartRate).filter(v => v && v > 0)
-    const spO2s = measurements.map(m => m.spO2).filter(v => v && v > 0)
-    const stresses = measurements.map(m => m.stress).filter(v => v && v > 0)
+    const heartRates = measurements.map(m => m.heartRate || 0)
+    const spO2s = measurements.map(m => m.spO2 || 0)
+    const stresses = measurements.map(m => m.stress || 0)
     const totalSteps = measurements.reduce((sum, m) => sum + (m.steps || 0), 0)
     const totalCalories = measurements.reduce((sum, m) => sum + (m.calories || 0), 0)
 
