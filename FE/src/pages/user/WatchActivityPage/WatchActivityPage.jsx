@@ -10,7 +10,7 @@ const WatchActivityPage = () => {
 
   const [measurements, setMeasurements] = useState([])
   const [stats, setStats] = useState(null)
-  const [period, setPeriod] = useState('week')
+  const [period, setPeriod] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
