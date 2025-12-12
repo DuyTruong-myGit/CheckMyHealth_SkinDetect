@@ -304,16 +304,16 @@ const WatchActivityPage = () => {
                               Stress: {m.stress}
                             </span>
                           )}
-                          {(m.steps || m.calories) && (
+                          {(typeof m.steps !== 'undefined' || typeof m.calories !== 'undefined') && (
                             <span>
                               <span role="img" aria-label="steps">
                                 👣
                               </span>{' '}
-                              Bước chân: {m.steps || 0} ·{' '}
+                              Bước chân: {m.steps ?? 0} ·{' '}
                               <span role="img" aria-label="calories">
                                 🔥
                               </span>{' '}
-                              Cal: {m.calories || 0}
+                              Cal: {m.calories ?? 0}
                             </span>
                           )}
                           {m.duration && (
