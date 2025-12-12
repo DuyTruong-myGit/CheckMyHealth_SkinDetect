@@ -92,8 +92,9 @@ const newsController = {
 
       // Handle duplicate URL error
       if (error.code === 'ER_DUP_ENTRY') {
+        const { url } = req.body;
         return res.status(400).json({
-          message: 'URL nguồn tin đã tồn tại trong hệ thống'
+          message: `URL "${url}" đã tồn tại trong hệ thống`
         });
       }
 
