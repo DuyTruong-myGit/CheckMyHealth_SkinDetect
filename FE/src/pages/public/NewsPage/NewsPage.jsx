@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import '../../user/HistoryPage/History.css'
 import newsService from '../../../services/features/newsService.js'
-import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import { Pagination, Skeleton, EmptyState, Breadcrumbs } from '../../../components/ui'
 import showToast from '../../../utils/toast'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 
@@ -116,6 +116,7 @@ const NewsPage = () => {
 
   return (
     <div className="history-container">
+      <Breadcrumbs />
       <div className="history-card">
         <h1 className="history-title">Tin tức</h1>
         <p className="history-subtitle">

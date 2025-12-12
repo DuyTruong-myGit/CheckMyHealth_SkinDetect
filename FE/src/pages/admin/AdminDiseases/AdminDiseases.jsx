@@ -125,7 +125,8 @@ const AdminDiseases = () => {
       await loadDiseases()
     } catch (err) {
       console.error('Failed to delete disease:', err)
-      showToast.error(err.response?.data?.message || 'Lỗi khi xóa bệnh lý')
+      const errorMsg = err.response?.data?.message || err.message || 'Lỗi khi xóa bệnh lý'
+      showToast.error(errorMsg)
     }
   }
 
@@ -151,7 +152,7 @@ const AdminDiseases = () => {
       setError('')
       await diseaseService.exportAll('csv')
     } catch (err) {
-      const errorMessage = err.message || 'Lỗi khi export dữ liệu'
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi khi export dữ liệu'
       showToast.error(errorMessage)
     }
   }
@@ -161,7 +162,8 @@ const AdminDiseases = () => {
       setError('')
       await diseaseService.exportSample('csv')
     } catch (err) {
-      showToast.error(err.message || 'Lỗi khi export template')
+      const errorMsg = err.response?.data?.message || err.message || 'Lỗi khi export template'
+      showToast.error(errorMsg)
     }
   }
 
@@ -212,7 +214,7 @@ const AdminDiseases = () => {
         await loadDiseases()
       }
     } catch (err) {
-      const errorMessage = err.message || 'Lỗi khi import dữ liệu'
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi khi import dữ liệu'
       showToast.error(errorMessage)
       setImportResult(null)
     } finally {

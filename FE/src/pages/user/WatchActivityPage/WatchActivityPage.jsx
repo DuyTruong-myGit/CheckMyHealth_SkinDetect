@@ -145,6 +145,7 @@ const WatchActivityPage = () => {
 
   return (
     <div className="history-container">
+      <Breadcrumbs />
       <div className="history-card">
         <div className="history-header">
           <div>

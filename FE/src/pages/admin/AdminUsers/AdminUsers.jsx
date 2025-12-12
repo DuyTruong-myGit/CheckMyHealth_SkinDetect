@@ -118,7 +118,8 @@ const AdminUsers = () => {
       setCurrentPage(1)
       showToast.success('Tạo người dùng thành công!')
     } catch (error) {
-      showToast.error(error.message || 'Không thể tạo người dùng')
+      const errorMsg = error.response?.data?.message || error.message || 'Không thể tạo người dùng'
+      showToast.error(errorMsg)
     } finally {
       setAddUserLoading(false)
     }
@@ -148,7 +149,8 @@ const AdminUsers = () => {
           setState({ loading: false, data, error: null })
           showToast.success(`Đã ${isPromote ? 'thăng cấp' : 'giáng cấp'} quyền cho ${userName}`)
         } catch (error) {
-          showToast.error(error.message || 'Không thể thay đổi quyền')
+          const errorMsg = error.response?.data?.message || error.message || 'Không thể thay đổi quyền'
+          showToast.error(errorMsg)
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
         } finally {
@@ -174,7 +176,8 @@ const AdminUsers = () => {
           setState({ loading: false, data, error: null })
           showToast.success(`Đã ${statusText} tài khoản của ${userName}`)
         } catch (error) {
-          showToast.error(error.message || 'Không thể thay đổi trạng thái')
+          const errorMsg = error.response?.data?.message || error.message || 'Không thể thay đổi trạng thái'
+          showToast.error(errorMsg)
           const data = await getUsers(searchTerm)
           setState({ loading: false, data, error: null })
         } finally {

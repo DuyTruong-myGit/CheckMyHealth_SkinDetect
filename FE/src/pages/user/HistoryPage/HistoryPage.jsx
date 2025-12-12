@@ -5,7 +5,7 @@ import { getHistory, deleteHistory } from '../../../services/features/diagnosisS
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
-import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import { Pagination, Skeleton, EmptyState, Breadcrumbs } from '../../../components/ui'
 import showToast from '../../../utils/toast'
 import './History.css'
 
@@ -130,6 +130,7 @@ const HistoryPage = () => {
 
   return (
     <div className="history-container">
+      <Breadcrumbs />
       <div className="history-card">
         <div className="history-header">
           <div>

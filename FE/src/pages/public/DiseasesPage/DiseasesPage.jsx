@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import diseaseService from '../../../services/features/diseaseService.js'
-import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import { Pagination, Skeleton, EmptyState, Breadcrumbs } from '../../../components/ui'
 import showToast from '../../../utils/toast'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import '../../user/HistoryPage/History.css'
@@ -48,6 +48,7 @@ const DiseasesPage = () => {
 
   return (
     <div className="history-container">
+      <Breadcrumbs />
       <div className="history-card">
         <div className="history-header">
           <div>

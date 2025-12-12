@@ -144,7 +144,8 @@ const AdminEditDisease = () => {
       navigate('/admin/diseases')
     } catch (err) {
       console.error('Failed to save disease:', err)
-      showToast.error(err.response?.data?.message || 'Lỗi khi lưu bệnh lý')
+      const errorMsg = err.response?.data?.message || err.message || 'Lỗi khi lưu bệnh lý'
+      showToast.error(errorMsg)
     } finally {
       setSaving(false)
     }

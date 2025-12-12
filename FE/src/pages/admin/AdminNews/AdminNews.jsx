@@ -62,7 +62,8 @@ const AdminNews = () => {
       await loadSources()
     } catch (err) {
       console.error('Failed to add source:', err)
-      showToast.error(err.response?.data?.message || 'Lỗi khi thêm nguồn tin')
+      const errorMsg = err.response?.data?.message || err.message || 'Lỗi khi thêm nguồn tin'
+      showToast.error(errorMsg)
     }
   }
 
@@ -75,7 +76,8 @@ const AdminNews = () => {
       await loadSources()
     } catch (err) {
       console.error('Failed to delete source:', err)
-      showToast.error(err.response?.data?.message || 'Lỗi khi xóa nguồn tin')
+      const errorMsg = err.response?.data?.message || err.message || 'Lỗi khi xóa nguồn tin'
+      showToast.error(errorMsg)
     }
   }
 
