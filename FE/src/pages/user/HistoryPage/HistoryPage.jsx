@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { getHistory, deleteHistory } from '../../../services/features/diagnosisService.js'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog/ConfirmDialog.jsx'
 import ImageViewer from '../../../components/ui/ImageViewer/ImageViewer.jsx'
+import Pagination from '../../../components/ui/Pagination/Pagination.jsx'
 import './History.css'
 
 const HistoryPage = () => {
@@ -19,6 +20,9 @@ const HistoryPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -60,6 +64,14 @@ const HistoryPage = () => {
     return sorted
   }
 
+  // Paginated history
+  const paginatedHistory = useMemo(() => {
+    const sorted = getSortedHistory()
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return sorted.slice(startIndex, endIndex)
+  }, [history, sortBy, currentPage, itemsPerPage])
+
   const formatDate = (dateValue) => {
     if (!dateValue) return 'N/A'
     const date = new Date(dateValue)
@@ -83,7 +95,7 @@ const HistoryPage = () => {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return
-    
+
     try {
       setDeleting(true)
       setError('')
@@ -122,11 +134,11 @@ const HistoryPage = () => {
             <h1 className="history-title">Lịch sử chuẩn đoán</h1>
             <p className="history-subtitle">Xem lại các lần chuẩn đoán trước đây của bạn</p>
           </div>
-          <button 
+          <button
             className="history-new-btn"
             onClick={() => navigate('/diagnosis')}
           >
-              Chuẩn đoán mới
+            Chuẩn đoán mới
           </button>
         </div>
 
@@ -148,7 +160,7 @@ const HistoryPage = () => {
             </svg>
             <p>Bạn chưa có lịch sử chuẩn đoán nào.</p>
             <p>Hãy thử chuẩn đoán ảnh đầu tiên của bạn!</p>
-            <button 
+            <button
               className="history-start-btn"
               onClick={() => navigate('/diagnosis')}
             >
@@ -170,13 +182,13 @@ const HistoryPage = () => {
             </div>
 
             <div className="history-list">
-              {getSortedHistory().map((item, index) => {
+              {paginatedHistory.map((item, index) => {
                 const itemId = item.diagnosis_id || `history-${index}`
                 const isExpanded = expandedId === itemId
-                
+
                 return (
                   <div key={itemId} className="history-item">
-                    <div 
+                    <div
                       className="history-item-header"
                       onClick={(e) => {
                         e.stopPropagation()
@@ -220,7 +232,7 @@ const HistoryPage = () => {
                             </svg>
                           </button>
                         )}
-                        <button 
+                        <button
                           className="history-item-toggle"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -268,6 +280,22 @@ const HistoryPage = () => {
                 )
               })}
             </div>
+
+            {history.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.max(1, Math.ceil(history.length / itemsPerPage))}
+                  onPageChange={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={history.length}
+                  onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
+                  customItemsPerPage={customItemsPerPage}
+                  onCustomItemsPerPageChange={setCustomItemsPerPage}
+                  itemLabel="kết quả"
+                />
+              </div>
+            )}
           </>
         )}
       </div>
