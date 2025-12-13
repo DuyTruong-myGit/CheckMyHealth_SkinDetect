@@ -5,41 +5,97 @@ const diseaseModel = require('../models/disease.model');
 const { pool } = require('../config/db');
 
 // === DANH SÁCH CLASS HỢP LỆ VÀ ÁNH XẠ DB ===
+// const AI_TO_DB_MAP = {
+//     'nv':    'Nevus',                   
+//     'vasc':  'Vascular Lesion',          
+//     'bcc':   'Basal Cell Carcinoma',    
+//     'mel':   'Melanoma',                
+//     'bkl':   'Seborrheic Keratosis',    
+//     'df':    'Dermatofibroma',          
+//     'akiec': 'Actinic Keratosis'        
+// };
+
 const AI_TO_DB_MAP = {
-    'nv':    'Nevus',                   
-    'vasc':  'Vascular Lesion',          
-    'bcc':   'Basal Cell Carcinoma',    
-    'mel':   'Melanoma',                
-    'bkl':   'Seborrheic Keratosis',    
-    'df':    'Dermatofibroma',          
-    'akiec': 'Actinic Keratosis'        
+    "Actinic Keratosis": "ACTINIC_KERATOSIS",
+    "Basal Cell Carcinoma": "BASAL_CELL_CARCINOMA",
+    "Dermatofibroma": "DERMATOFIBROMA",
+    "Melanoma": "MELANOMA",
+    "Nevus": "NEVUS",
+    "Pigmented Benign Keratosis": "PIGMENTED_BENIGN_KERATOSIS",
+    "Seborrheic Keratosis": "SEBORRHEIC_KERATOSIS",
+    "Squamous Cell Carcinoma": "SQUAMOUS_CELL_CARCINOMA",
+    "Vascular Lesion": "VASCULAR_LESION",
+    "Ringworm": "RINGWORM"
 };
 
 // === HÀM KIỂM TRA ẢNH CÓ PHẢI DA LIỄU KHÔNG ===
-const validateSkinImage = (aiResult) => {
-    // 1. Kiểm tra class có trong danh sách không
-    const predictedClass = aiResult.prediction;
+// const validateSkinImage = (aiResult) => {
+//     // 1. Kiểm tra class có trong danh sách không
+//     const predictedClass = aiResult.prediction;
     
-    // === SỬA LỖI Ở ĐÂY: Dùng đúng tên biến AI_TO_DB_MAP ===
-    if (!AI_TO_DB_MAP[predictedClass]) {
-        return {
-            isValid: false,
-            reason: 'unknown_class',
-            message: 'AI không nhận diện được đây là ảnh bệnh da liễu trong hệ thống.'
-        };
-    }
+//     // === SỬA LỖI Ở ĐÂY: Dùng đúng tên biến AI_TO_DB_MAP ===
+//     if (!AI_TO_DB_MAP[predictedClass]) {
+//         return {
+//             isValid: false,
+//             reason: 'unknown_class',
+//             message: 'AI không nhận diện được đây là ảnh bệnh da liễu trong hệ thống.'
+//         };
+//     }
 
-    // 2. Kiểm tra confidence
+//     // 2. Kiểm tra confidence
+//     const confidence = aiResult.confidence;
+//     if (confidence < 0.3) {
+//         return {
+//             isValid: false,
+//             reason: 'low_confidence',
+//             message: 'Độ tin cậy quá thấp. Vui lòng chụp ảnh rõ hơn.'
+//         };
+//     }
+
+//     return { isValid: true };
+// };
+
+const validateSkinImage = (aiResult) => {
+    const label = aiResult.prediction;
     const confidence = aiResult.confidence;
-    if (confidence < 0.3) {
+
+    // 1. Ảnh KHÔNG liên quan mô hình
+    if (label === "Unknown_Normal") {
         return {
             isValid: false,
-            reason: 'low_confidence',
-            message: 'Độ tin cậy quá thấp. Vui lòng chụp ảnh rõ hơn.'
+            reason: "not_skin_image",
+            message: "Ảnh không liên quan đến da liễu. Vui lòng chụp ảnh vùng da cần chẩn đoán."
         };
     }
 
-    return { isValid: true };
+    // 2. Da bình thường → không phải bệnh
+    if (label === "Normal Skin") {
+        return {
+            isValid: true,
+            isDisease: false,
+            message: "Da bình thường, không phát hiện dấu hiệu bệnh lý."
+        };
+    }
+
+    // 3. Không nằm trong danh sách bệnh hệ thống hỗ trợ
+    if (!AI_TO_DB_MAP[label]) {
+        return {
+            isValid: false,
+            reason: "unsupported_disease",
+            message: "Bệnh này chưa được hệ thống hỗ trợ."
+        };
+    }
+
+    // 4. Confidence thấp
+    if (confidence < 0.55) {
+        return {
+            isValid: false,
+            reason: "low_confidence",
+            message: "Ảnh chưa đủ rõ, vui lòng chụp lại."
+        };
+    }
+
+    return { isValid: true, isDisease: true };
 };
 
 // --- HÀM GỌI API AI THỰC TẾ ---
