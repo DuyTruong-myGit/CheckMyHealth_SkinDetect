@@ -89,6 +89,15 @@ const newsController = {
       });
     } catch (error) {
       console.error('Error creating news source:', error);
+
+      // Handle duplicate URL error
+      if (error.code === 'ER_DUP_ENTRY') {
+        const { url } = req.body;
+        return res.status(400).json({
+          message: `URL "${url}" đã tồn tại trong hệ thống`
+        });
+      }
+
       res.status(500).json({
         message: 'Lỗi khi thêm nguồn tin',
         error: error.message
@@ -186,11 +195,11 @@ const newsController = {
 
             // Try to extract title
             let title = $elem.find('h2, h3, .title, .headline').text().trim() ||
-                       $elem.find('a').first().text().trim();
+              $elem.find('a').first().text().trim();
 
             // Try to extract link
             let link = $elem.find('a').first().attr('href') ||
-                      $elem.attr('href');
+              $elem.attr('href');
 
             if (link && link.startsWith('/')) {
               link = parsedUrl.origin + link;
@@ -198,7 +207,7 @@ const newsController = {
 
             // Try to extract image
             let image = $elem.find('img').first().attr('src') ||
-                       $elem.find('img').first().attr('data-src');
+              $elem.find('img').first().attr('data-src');
 
             if (image && image.startsWith('/')) {
               image = parsedUrl.origin + image;

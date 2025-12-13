@@ -1,10 +1,8 @@
-// scheduler.js
 const cron = require('node-cron');
 const { pool } = require('../config/db');
 const notificationModel = require('../models/notification.model');
 const admin = require('firebase-admin');
 
-// ... (Phần khởi tạo Firebase giữ nguyên) ...
 // Code Firebase init của bạn ở đây...
 if (!admin.apps.length) {
     let serviceAccount = null;
@@ -65,8 +63,7 @@ const initScheduledJobs = () => {
                 AND (s.last_triggered_at IS NULL OR s.last_triggered_at < (NOW() - INTERVAL 55 SECOND))
                 GROUP BY s.user_id, s.title, s.type, u.fcm_token
             `, [currentTimeStr, currentDateStr, currentDay]);
-
-            if (candidates.length === 0) return;
+if (candidates.length === 0) return;
 
             console.log(`[Cron ${currentTimeStr}] Found ${candidates.length} candidates.`);
 

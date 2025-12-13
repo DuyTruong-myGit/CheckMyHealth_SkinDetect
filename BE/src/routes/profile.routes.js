@@ -32,6 +32,23 @@ const profileController = require('../controllers/profile.controller');
  *                   type: string
  *                   enum: [local, google]
  *                   description: Phương thức đăng nhập
+ *                 role:
+ *                   type: string
+ *                   enum: [user, admin]
+ *                   description: Quyền của người dùng
+ *                 avatar_url:
+ *                   type: string
+ *                   format: uri
+ *                   nullable: true
+ *                   description: URL ảnh đại diện (có thể null)
+ *                 watchDeviceId:
+ *                   type: string
+ *                   nullable: true
+ *                   description: ID đồng hồ đã ghép đôi (nếu có)
+ *                 account_status:
+ *                   type: string
+ *                   enum: [active, suspended, banned]
+ *                   description: Trạng thái tài khoản
  *       401:
  *         description: Không có quyền truy cập
  *         content:
@@ -321,7 +338,44 @@ router.put('/password', authMiddleware, async (req, res) => {
     }
 });
 
-
+/**
+ * @swagger
+ * /api/profile/fcm-token:
+ *   put:
+ *     summary: Cập nhật FCM token cho người dùng
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fcmToken
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *                 description: FCM token từ browser/client
+ *     responses:
+ *       200:
+ *         description: Cập nhật FCM token thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "FCM token updated"
+ *       400:
+ *         description: Thiếu hoặc FCM token không hợp lệ
+ *       401:
+ *         description: Không có quyền truy cập
+ *       500:
+ *         description: Lỗi máy chủ
+ */
 router.put('/fcm-token', authMiddleware, profileController.updateFcmToken);
 
 module.exports = router;
