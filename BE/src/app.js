@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 // Nhập routes (MỚI)
-const authRoutes = require('./routes/auth.routes'); 
+const authRoutes = require('./routes/auth.routes');
 const diagnosisRoutes = require('./routes/diagnosis.routes');
 const profileRoutes = require('./routes/profile.routes');
 const adminRoutes = require('./routes/admin.routes');
@@ -90,8 +90,8 @@ app.get('/', (req, res) => {
  *                   description: Thời gian server đã chạy (giây)
  */
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'ok', 
+    res.status(200).json({
+        status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
     });
@@ -124,12 +124,12 @@ initializeDatabase().catch(error => {
 // --- Global Error Handler (Phải đặt sau tất cả routes) ---
 app.use((err, req, res, next) => {
     console.error('❌ Unhandled Error:', err);
-    
+
     // Nếu response đã được gửi, chuyển cho Express default error handler
     if (res.headersSent) {
         return next(err);
     }
-    
+
     // Trả về lỗi dạng JSON
     res.status(err.status || 500).json({
         message: err.message || 'Lỗi máy chủ nội bộ',

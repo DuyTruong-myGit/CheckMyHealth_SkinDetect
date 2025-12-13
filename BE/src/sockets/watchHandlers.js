@@ -1,0 +1,128 @@
+const db = require('../config/db');
+
+/**
+ * Watch App Socket Event Handlers
+ * Handles real-time communication between Watch App, Backend, and Mobile App
+ */
+function watchHandlers(io, socket) {
+
+    /**
+     * Event: watch:measurement
+     * Watch App sends measurement data (heart rate, SpO2, stress, etc.)
+     * Backend saves to database and broadcasts to all user's devices (Mobile)
+     */
+    socket.on('watch:measurement', async (data) => {
+        try {
+            console.log(`📊 Received measurement from user ${socket.userId}:`, data);
+
+            // Validate that at least one measurement field is provided
+            if (!data.heartRate && !data.spO2 && !data.stress && !data.steps) {
+                socket.emit('error', { message: 'Invalid measurement data: At least one field required' });
+                return;
+            }
+
+            // Save to watch_measurements table
+            const [result] = await db.query(
+                `INSERT INTO watch_measurements 
+                (user_id, heart_rate, spo2, stress_level, steps, calories, duration, measurement_type, measured_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                [
+                    socket.userId,
+                    data.heartRate || null,
+                    data.spO2 || null,
+                    data.stress || null,
+                    data.steps || null,
+                    data.calories || null,
+                    data.duration || null,
+                    data.type || 'manual'
+                ]
+            );
+
+            const measurementId = result.insertId;
+
+            // Send acknowledgment back to Watch App
+            socket.emit('watch:measurement:ack', {
+                success: true,
+                id: measurementId,
+                timestamp: new Date()
+            });
+
+            // Broadcast to all devices of this user (including Mobile app)
+            // This allows real-time updates on the phone when watch sends data
+            io.to(`user_${socket.userId}`).emit('watch:update', {
+                id: measurementId,
+                userId: socket.userId,
+                heartRate: data.heartRate,
+                spO2: data.spO2,
+                stress: data.stress,
+                steps: data.steps,
+                calories: data.calories,
+                duration: data.duration,
+                type: data.type || 'manual',
+                timestamp: new Date()
+            });
+
+            console.log(`✅ Measurement saved with ID: ${measurementId}`);
+
+        } catch (error) {
+            console.error('❌ Error saving measurement:', error);
+            socket.emit('error', {
+                message: 'Failed to save measurement',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+
+    /**
+     * Event: phone:requestLatest
+     * Mobile App requests the latest measurement data
+     * Backend fetches from database and sends back
+     */
+    socket.on('phone:requestLatest', async () => {
+        try {
+            console.log(`📱 User ${socket.userId} requested latest measurement`);
+
+            const [rows] = await db.query(
+                `SELECT 
+                    id,
+                    user_id,
+                    heart_rate,
+                    spo2,
+                    stress_level,
+                    steps,
+                    calories,
+                    duration,
+                    measurement_type,
+                    measured_at,
+                    created_at
+                FROM watch_measurements 
+                WHERE user_id = ? 
+                ORDER BY measured_at DESC 
+                LIMIT 1`,
+                [socket.userId]
+            );
+
+            // Send latest data to requesting client
+            socket.emit('phone:latestData', rows[0] || null);
+
+            console.log(`✅ Sent latest data to user ${socket.userId}`);
+
+        } catch (error) {
+            console.error('❌ Error fetching latest measurement:', error);
+            socket.emit('error', {
+                message: 'Failed to fetch latest data',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    });
+
+    /**
+     * Event: ping
+     * Heartbeat to keep connection alive
+     */
+    socket.on('ping', () => {
+        socket.emit('pong', { timestamp: Date.now() });
+    });
+}
+
+module.exports = watchHandlers;
