@@ -18,21 +18,21 @@ const watchController = {
             }
 
             const measurementId = await watchModel.create(
-                userId, 
-                type, 
-                heartRate, 
-                spO2, 
-                stress, 
-                steps, 
-                calories, 
+                userId,
+                type,
+                heartRate,
+                spO2,
+                stress,
+                steps,
+                calories,
                 duration
             );
 
             console.log(`✅ Đã lưu bản ghi đo lường mới [ID: ${measurementId}] - Loại: ${type} - User: ${userId}`);
-            
-            res.status(201).json({ 
-                message: 'Lưu thành công', 
-                id: measurementId 
+
+            res.status(201).json({
+                message: 'Lưu thành công',
+                id: measurementId
             });
         } catch (error) {
             console.error('Error creating measurement:', error);
@@ -48,7 +48,7 @@ const watchController = {
         try {
             const userId = req.user.userId;
             const limit = parseInt(req.query.limit) || 50;
-            
+
             const measurements = await watchModel.findByUserId(userId, limit);
             res.status(200).json(measurements);
         } catch (error) {
@@ -67,7 +67,7 @@ const watchController = {
             const userId = req.user.userId;
 
             const success = await watchModel.deleteById(id, userId);
-            
+
             if (success) {
                 res.status(200).json({ message: 'Đã xóa bản ghi đo lường.' });
             } else {
@@ -87,11 +87,11 @@ const watchController = {
         try {
             const userId = req.user.userId;
             const latest = await watchModel.getLatest(userId);
-            
+
             if (!latest) {
                 return res.status(404).json({ message: 'Chưa có dữ liệu đo lường.' });
             }
-            
+
             res.status(200).json(latest);
         } catch (error) {
             console.error('Error fetching latest measurement:', error);
@@ -107,13 +107,13 @@ const watchController = {
         try {
             const { id } = req.params;
             const userId = req.user.userId;
-            
+
             const measurement = await watchModel.getById(id, userId);
-            
+
             if (!measurement) {
                 return res.status(404).json({ message: 'Không tìm thấy bản ghi.' });
             }
-            
+
             res.status(200).json(measurement);
         } catch (error) {
             console.error('Error fetching measurement by id:', error);
@@ -130,7 +130,7 @@ const watchController = {
             const { type } = req.params;
             const userId = req.user.userId;
             const limit = parseInt(req.query.limit) || 50;
-            
+
             const measurements = await watchModel.findByType(userId, type, limit);
             res.status(200).json(measurements);
         } catch (error) {
@@ -148,13 +148,13 @@ const watchController = {
             const { startDate, endDate } = req.query;
             const userId = req.user.userId;
             const limit = parseInt(req.query.limit) || 100;
-            
+
             if (!startDate || !endDate) {
-                return res.status(400).json({ 
-                    message: 'Vui lòng cung cấp startDate và endDate (format: YYYY-MM-DD)' 
+                return res.status(400).json({
+                    message: 'Vui lòng cung cấp startDate và endDate (format: YYYY-MM-DD)'
                 });
             }
-            
+
             const measurements = await watchModel.findByDateRange(userId, startDate, endDate, limit);
             res.status(200).json(measurements);
         } catch (error) {
@@ -186,13 +186,13 @@ const watchController = {
         try {
             const userId = req.user.userId;
             const period = req.query.period || 'all'; // today, week, month, all
-            
+
             if (!['today', 'week', 'month', 'all'].includes(period)) {
-                return res.status(400).json({ 
-                    message: 'Period phải là: today, week, month, hoặc all' 
+                return res.status(400).json({
+                    message: 'Period phải là: today, week, month, hoặc all'
                 });
             }
-            
+
             const stats = await watchModel.getStats(userId, period);
             res.status(200).json(stats);
         } catch (error) {
@@ -225,7 +225,7 @@ const watchController = {
             }
 
             await userModel.updateWatchId(userId, deviceId);
-            
+
             console.log(`🔗 User ${userId} đã liên kết với Watch ID: ${deviceId}`);
             res.status(200).json({ message: 'Ghép đôi thành công!' });
         } catch (error) {
@@ -279,6 +279,23 @@ const watchController = {
         } catch (error) {
             console.error('Check status error:', error);
             res.status(500).json({ message: 'Lỗi máy chủ' });
+        }
+    },
+
+    /**
+     * [MỚI] Hủy liên kết đồng hồ
+     * POST /api/watch/unlink
+     */
+    unlinkDevice: async (req, res) => {
+        try {
+            const userId = req.user.userId;
+            await userModel.removeWatchId(userId);
+
+            console.log(`🔌 User ${userId} đã hủy liên kết đồng hồ`);
+            res.status(200).json({ message: 'Đã hủy kết nối thiết bị thành công.' });
+        } catch (error) {
+            console.error('Unlink device error:', error);
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
         }
     }
 };

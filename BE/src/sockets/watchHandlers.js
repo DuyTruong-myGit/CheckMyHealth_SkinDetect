@@ -74,6 +74,44 @@ function watchHandlers(io, socket) {
     });
 
     /**
+     * Event: watch:live:health
+     * Real-time health data (every second during measurement)
+     * Forward to Mobile App WITHOUT saving to DB
+     */
+    socket.on('watch:live:health', (data) => {
+        console.log(`💓 Live health from user ${socket.userId}:`, data);
+        
+        // Forward to all user's devices (real-time, không lưu DB)
+        io.to(`user_${socket.userId}`).emit('watch:update', {
+            userId: socket.userId,
+            heartRate: data.heartRate,
+            spO2: data.spO2,
+            stress: data.stress,
+            type: 'live:health',
+            timestamp: new Date()
+        });
+    });
+
+    /**
+     * Event: watch:live:workout
+     * Real-time workout data (every second during exercise)
+     * Forward to Mobile App WITHOUT saving to DB
+     */
+    socket.on('watch:live:workout', (data) => {
+        console.log(`🏃 Live workout from user ${socket.userId}:`, data);
+        
+        // Forward to all user's devices (real-time, không lưu DB)
+        io.to(`user_${socket.userId}`).emit('watch:update', {
+            userId: socket.userId,
+            steps: data.steps,
+            calories: data.calories,
+            duration: data.duration,
+            type: 'live:workout',
+            timestamp: new Date()
+        });
+    });
+
+    /**
      * Event: phone:requestLatest
      * Mobile App requests the latest measurement data
      * Backend fetches from database and sends back

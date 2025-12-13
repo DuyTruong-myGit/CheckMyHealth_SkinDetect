@@ -8,11 +8,11 @@ const userModel = {
     findByEmail: async (email) => {
         try {
             const [rows] = await pool.query(
-                'SELECT * FROM users WHERE email = ?', 
+                'SELECT * FROM users WHERE email = ?',
                 [email]
             );
             // rows là một mảng, chúng ta chỉ cần phần tử đầu tiên (nếu có)
-            return rows[0]; 
+            return rows[0];
         } catch (error) {
             console.error('Error finding user by email:', error);
             throw error;
@@ -258,9 +258,9 @@ const userModel = {
 
 
 
-     /**
-     * Tìm user theo provider và provider_id (cho Google OAuth)
-     */
+    /**
+    * Tìm user theo provider và provider_id (cho Google OAuth)
+    */
     findByProvider: async (provider, providerId) => {
         try {
             const [rows] = await pool.query(
@@ -313,7 +313,7 @@ const userModel = {
     linkGoogleAccount: async (userId, googleProfile) => {
         try {
             const avatarUrl = googleProfile.photos[0]?.value || null;
-            
+
             await pool.query(
                 `UPDATE users 
                 SET provider = 'google', provider_id = ?, avatar_url = ?
@@ -384,7 +384,7 @@ const userModel = {
         try {
             // Trước tiên, xóa deviceId này khỏi các user khác (nếu có) để đảm bảo UNIQUE
             await pool.query('UPDATE users SET watch_device_id = NULL WHERE watch_device_id = ?', [deviceId]);
-            
+
             // Cập nhật cho user hiện tại
             await pool.query(
                 'UPDATE users SET watch_device_id = ? WHERE user_id = ?',
@@ -409,6 +409,19 @@ const userModel = {
             return rows[0];
         } catch (error) {
             console.error('Error finding user by watch id:', error);
+            throw error;
+        }
+    },
+    // [MỚI] Hàm hủy liên kết đồng hồ
+    removeWatchId: async (userId) => {
+        try {
+            const [result] = await pool.query(
+                'UPDATE users SET watch_device_id = NULL WHERE user_id = ?',
+                [userId]
+            );
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error removing watch ID:', error);
             throw error;
         }
     }

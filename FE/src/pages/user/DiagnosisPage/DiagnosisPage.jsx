@@ -213,59 +213,93 @@ const DiagnosisPage = () => {
               </div>
             )}
 
-            <div className="diagnosis-result-content">
-              {result.disease_name && (
-                <div className="diagnosis-result-item diagnosis-result-item--disease">
-                  <span className="diagnosis-result-label">Bệnh:</span>
-                  <span className="diagnosis-result-value">{result.disease_name}</span>
+            {/* === XỬ LÝ DA BÌNH THƯỜNG === */}
+            {result.disease_name === 'Normal Skin' ? (
+              <div className="diagnosis-result-content diagnosis-result-content--normal">
+                <div className="diagnosis-normal-celebration">
+                  <div className="diagnosis-normal-icon">🎉</div>
+                  <h3 className="diagnosis-normal-title">Chúc mừng bạn!</h3>
+                  <p className="diagnosis-normal-message">
+                    {result.description || "Da của bạn hoàn toàn bình thường, không phát hiện dấu hiệu bệnh lý."}
+                  </p>
+                  {result.recommendation && (
+                    <p className="diagnosis-normal-tip">
+                      💡 {result.recommendation}
+                    </p>
+                  )}
                 </div>
-              )}
 
-              {result.confidence_score !== undefined && (
-                <div className="diagnosis-result-item diagnosis-result-item--confidence">
-                  <span className="diagnosis-result-label">Độ tin cậy:</span>
-                  <div className="diagnosis-confidence-bar">
-                    <div className="diagnosis-confidence-fill" style={{ width: `${result.confidence_score * 100}%` }}></div>
-                    <span className="diagnosis-result-value">
-                      {(result.confidence_score * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {result.description && (
-                <div className="diagnosis-result-description">
-                  <h3>Mô tả:</h3>
-                  <p>{result.description}</p>
-                </div>
-              )}
-
-              {result.info_id && (
-                <div className="diagnosis-result-link">
+                <div className="diagnosis-result-actions">
                   <button
-                    onClick={() => navigate(`/diseases/${result.info_id}`)}
-                    className="diagnosis-detail-btn"
+                    onClick={handleReset}
+                    className="diagnosis-new-btn"
                   >
-                    Xem thông tin y khoa chi tiết
+                    Chuẩn đoán ảnh khác
+                  </button>
+                  <button
+                    onClick={handleViewHistory}
+                    className="diagnosis-history-btn"
+                  >
+                    Xem lịch sử
                   </button>
                 </div>
-              )}
-
-              <div className="diagnosis-result-actions">
-                <button
-                  onClick={handleReset}
-                  className="diagnosis-new-btn"
-                >
-                  Chuẩn đoán ảnh khác
-                </button>
-                <button
-                  onClick={handleViewHistory}
-                  className="diagnosis-history-btn"
-                >
-                  Xem lịch sử
-                </button>
               </div>
-            </div>
+            ) : (
+              /* === HIỂN THỊ KẾT QUẢ BỆNH === */
+              <div className="diagnosis-result-content">
+                {result.disease_name && (
+                  <div className="diagnosis-result-item diagnosis-result-item--disease">
+                    <span className="diagnosis-result-label">Bệnh:</span>
+                    <span className="diagnosis-result-value">{result.disease_name_vi || result.disease_name}</span>
+                  </div>
+                )}
+
+                {result.confidence_score !== undefined && (
+                  <div className="diagnosis-result-item diagnosis-result-item--confidence">
+                    <span className="diagnosis-result-label">Độ tin cậy:</span>
+                    <div className="diagnosis-confidence-bar">
+                      <div className="diagnosis-confidence-fill" style={{ width: `${result.confidence_score * 100}%` }}></div>
+                      <span className="diagnosis-result-value">
+                        {(result.confidence_score * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {result.description && (
+                  <div className="diagnosis-result-description">
+                    <h3>Mô tả:</h3>
+                    <p>{result.description}</p>
+                  </div>
+                )}
+
+                {result.info_id && (
+                  <div className="diagnosis-result-link">
+                    <button
+                      onClick={() => navigate(`/diseases/${result.info_id}`)}
+                      className="diagnosis-detail-btn"
+                    >
+                      Xem thông tin y khoa chi tiết
+                    </button>
+                  </div>
+                )}
+
+                <div className="diagnosis-result-actions">
+                  <button
+                    onClick={handleReset}
+                    className="diagnosis-new-btn"
+                  >
+                    Chuẩn đoán ảnh khác
+                  </button>
+                  <button
+                    onClick={handleViewHistory}
+                    className="diagnosis-history-btn"
+                  >
+                    Xem lịch sử
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
