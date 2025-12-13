@@ -9,7 +9,6 @@ type Props = {
 const HeartRateDisplay = ({ bpm, isMeasuring }: Props) => {
   return (
     <View style={styles.container}>
-      {/* Vòng tròn trang trí bên ngoài */}
       <View style={styles.outerCircle}>
         <Text style={styles.value}>
           {isMeasuring ? "..." : bpm > 0 ? bpm : "--"}

@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../utils/api';
 import { StorageService } from '../utils/StorageService';
+import SocketService from './SocketService'; // [MỚI] Import SocketService
 
 export interface HealthRecord {
   id?: string;
@@ -32,7 +34,6 @@ const formatDate = (dateInput: string | number) => {
   }
 };
 
-// [MỚI] Hàm chuyển đổi thời gian "MM:SS" thành tổng giây để cộng dồn
 const parseDurationToSeconds = (durationStr?: string) => {
     if (!durationStr) return 0;
     try {
@@ -44,7 +45,6 @@ const parseDurationToSeconds = (durationStr?: string) => {
     return 0;
 };
 
-// [MỚI] Hàm đổi giây thành chuỗi "Xh Yp" hoặc "Yp Zs" để hiển thị
 const formatSecondsToDisplay = (totalSeconds: number) => {
     if (totalSeconds <= 0) return '--';
     const h = Math.floor(totalSeconds / 3600);
@@ -87,6 +87,7 @@ export const DataService = {
     }
   },
 
+  // [LOGIC MỚI] Gửi qua Socket hoặc HTTP
   addRecord: async (record: HealthRecord) => {
     const now = new Date();
     const newRecord = {
@@ -97,19 +98,41 @@ export const DataService = {
         isSynced: false
     };
 
+    // 1. Luôn lưu Offline trước
     await StorageService.saveToStorage(newRecord);
 
+    // 2. Thử gửi
     try {
-      const response = await fetch(`${API_URL}/watch/measurements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newRecord),
-      });
-      if (response.ok) {
-          // Không cần làm gì, để lần sau sync
+      const token = await AsyncStorage.getItem('USER_TOKEN');
+      if (token) {
+          // [ƯU TIÊN] Thử gửi bằng Socket trước
+          const sentBySocket = SocketService.sendMeasurement(newRecord);
+
+          if (sentBySocket) {
+              console.log("🚀 Đã gửi dữ liệu qua Socket!");
+              await StorageService.markAsSynced(newRecord.id);
+          } else {
+              // [FALLBACK] Nếu Socket chưa kết nối, dùng HTTP truyền thống
+              console.log("⚠️ Socket chưa sẵn sàng, chuyển sang dùng HTTP...");
+              const response = await fetch(`${API_URL}/watch/measurements`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newRecord),
+              });
+
+              if (response.ok) {
+                  console.log("✅ Gửi HTTP thành công!");
+                  await StorageService.markAsSynced(newRecord.id);
+              } else {
+                  console.log("❌ Gửi HTTP thất bại, để dành sync sau.");
+              }
+          }
       }
     } catch (error) {
-      console.log("Đang Offline, dữ liệu đã được lưu trong máy.");
+      console.log("Offline: Dữ liệu đã lưu an toàn trong máy.");
     }
   },
 
@@ -138,7 +161,6 @@ export const DataService = {
     const healthRecords = dailyRecords.filter(r => r.type === 'HEALTH');
     const workoutRecords = dailyRecords.filter(r => r.type === 'WORKOUT');
 
-    // 1. SỨC KHỎE: Tính TRUNG BÌNH (Giữ nguyên)
     let avgHeartRate = 0, avgSpO2 = 0, avgStress = 0;
     if (healthRecords.length > 0) {
       const totalHR = healthRecords.reduce((sum, r) => sum + (Number(r.heartRate) || 0), 0);
@@ -150,25 +172,18 @@ export const DataService = {
       avgStress = Math.round(totalStress / healthRecords.length);
     }
 
-    // 2. LUYỆN TẬP: Tính TỔNG CỘNG (Cộng dồn)
     let totalSteps = 0, totalCalories = 0, totalDurationSec = 0;
     if (workoutRecords.length > 0) {
-        // Cộng dồn bước chân
         totalSteps = workoutRecords.reduce((sum, r) => sum + (Number(r.steps) || 0), 0);
-        // Cộng dồn calo
         totalCalories = workoutRecords.reduce((sum, r) => sum + (Number(r.calories) || 0), 0);
-        // Cộng dồn thời gian (giây)
         totalDurationSec = workoutRecords.reduce((sum, r) => sum + parseDurationToSeconds(r.duration), 0);
     }
 
     return { 
-        // Sức khỏe (Trung bình)
         avgHeartRate, avgSpO2, avgStress, 
-        // Luyện tập (Tổng)
-        totalSteps, 
-        totalCalories, 
-        totalDurationSec, // Trả về giây để tính toán so sánh
-        totalDurationDisplay: formatSecondsToDisplay(totalDurationSec), // Trả về chuỗi để hiển thị
+        totalSteps, totalCalories, 
+        totalDurationSec,
+        totalDurationDisplay: formatSecondsToDisplay(totalDurationSec),
         hasData: healthRecords.length > 0 || workoutRecords.length > 0 
     };
   },
@@ -177,7 +192,6 @@ export const DataService = {
     if (!currentStats?.hasData) return { status: 'NO_DATA', msg: 'Chưa có dữ liệu' };
 
     let warnings = [];
-    // So sánh dựa trên chỉ số sức khỏe trung bình
     if (prevStats?.hasData && prevStats.avgHeartRate > 0) {
         const diff = Math.abs(currentStats.avgHeartRate - prevStats.avgHeartRate);
         if (diff > 15) warnings.push('Nhịp tim biến động mạnh');
