@@ -24,17 +24,17 @@ function watchHandlers(io, socket) {
             // Save to watch_measurements table
             const [result] = await db.query(
                 `INSERT INTO watch_measurements 
-                (user_id, heart_rate, spo2, stress_level, steps, calories, duration, measurement_type, measured_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                (user_id, type, heart_rate, spo2, stress, steps, calories, duration) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     socket.userId,
+                    data.type || 'manual',
                     data.heartRate || null,
                     data.spO2 || null,
                     data.stress || null,
                     data.steps || null,
                     data.calories || null,
-                    data.duration || null,
-                    data.type || 'manual'
+                    data.duration || null
                 ]
             );
 
@@ -86,18 +86,17 @@ function watchHandlers(io, socket) {
                 `SELECT 
                     id,
                     user_id,
+                    type,
                     heart_rate,
                     spo2,
-                    stress_level,
+                    stress,
                     steps,
                     calories,
                     duration,
-                    measurement_type,
-                    measured_at,
                     created_at
                 FROM watch_measurements 
                 WHERE user_id = ? 
-                ORDER BY measured_at DESC 
+                ORDER BY created_at DESC 
                 LIMIT 1`,
                 [socket.userId]
             );
