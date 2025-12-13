@@ -411,6 +411,19 @@ const userModel = {
             console.error('Error finding user by watch id:', error);
             throw error;
         }
+    },
+    // [MỚI] Hàm hủy liên kết đồng hồ
+    removeWatchId: async (userId) => {
+        try {
+            const [result] = await pool.query(
+                'UPDATE users SET watch_device_id = NULL WHERE user_id = ?',
+                [userId]
+            );
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error removing watch ID:', error);
+            throw error;
+        }
     }
 
 };

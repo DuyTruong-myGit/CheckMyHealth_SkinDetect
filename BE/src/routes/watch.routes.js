@@ -594,5 +594,8 @@ router.post('/link', authMiddleware, watchController.linkDevice);
 router.get('/status/:deviceId', watchController.checkDeviceStatus);
 
 
+router.post('/unlink', authMiddleware, watchController.unlinkDevice);
+
+
 module.exports = router;
 

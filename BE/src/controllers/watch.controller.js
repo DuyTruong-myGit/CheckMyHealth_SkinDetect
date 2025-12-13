@@ -280,6 +280,23 @@ const watchController = {
             console.error('Check status error:', error);
             res.status(500).json({ message: 'Lỗi máy chủ' });
         }
+    },
+
+    /**
+     * [MỚI] Hủy liên kết đồng hồ
+     * POST /api/watch/unlink
+     */
+    unlinkDevice: async (req, res) => {
+        try {
+            const userId = req.user.userId;
+            await userModel.removeWatchId(userId);
+            
+            console.log(`🔌 User ${userId} đã hủy liên kết đồng hồ`);
+            res.status(200).json({ message: 'Đã hủy kết nối thiết bị thành công.' });
+        } catch (error) {
+            console.error('Unlink device error:', error);
+            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+        }
     }
 };
 
