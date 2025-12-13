@@ -24,24 +24,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Kết nối Socket khi mở App
   useEffect(() => {
-    const initSocket = async () => {
-        await SocketService.connect();
-    };
-    initSocket();
-    return () => { SocketService.disconnect(); };
+    SocketService.connect();
+    return () => SocketService.disconnect();
   }, []);
 
   // --- LOGIC SỨC KHỎE ---
   const toggleHealthMeasure = () => {
     if (isHealthMeasuring) {
-      // DỪNG ĐO
+      // === BẤM DỪNG ===
       if (healthTimer.current) clearInterval(healthTimer.current);
       setIsHealthMeasuring(false);
       
-      // Lưu kết quả cuối cùng vào DB
+      // CHỈ LƯU KHI DỪNG
       if (healthData.heartRate !== '--') {
         const now = new Date();
         const timeString = `${now.getHours()}:${now.getMinutes()} - ${now.getDate()}/${now.getMonth() + 1}`;
+        
+        // Hàm này sẽ gọi sendMeasurement để lưu vào DB
         DataService.addRecord({
             id: Math.random().toString(),
             type: 'HEALTH',
@@ -54,12 +53,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setHealthData({ heartRate: '--', spO2: '--', stress: '--' });
 
     } else {
-      // BẮT ĐẦU ĐO
+      // === BẮT ĐẦU ĐO ===
       setIsHealthMeasuring(true);
       
-      // [QUAN TRỌNG] Vòng lặp chạy mỗi giây
       healthTimer.current = setInterval(() => {
-        // 1. Tạo dữ liệu mới
+        // 1. Giả lập dữ liệu mới
         const newData = {
             heartRate: Math.floor(65 + Math.random() * 45),
             spO2: Math.floor(96 + Math.random() * 3),
@@ -69,7 +67,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // 2. Cập nhật màn hình Đồng hồ
         setHealthData(newData);
         
-        // 3. Gửi sang Điện thoại (Realtime)
+        // 3. GỬI REALTIME (Không lưu, chỉ bắn sang điện thoại)
         SocketService.emitLiveHealth(newData);
 
       }, 1000); 
@@ -79,11 +77,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // --- LOGIC LUYỆN TẬP ---
   const toggleWorkout = () => {
     if (isWorkoutRunning) {
-      // DỪNG TẬP
+      // === BẤM DỪNG ===
       if (workoutTimer.current) clearInterval(workoutTimer.current);
       setIsWorkoutRunning(false);
 
-      // Lưu kết quả
+      // CHỈ LƯU KHI DỪNG
       if (workoutData.steps > 0) {
         const now = new Date();
         const timeString = `${now.getHours()}:${now.getMinutes()} - ${now.getDate()}/${now.getMonth() + 1}`;
@@ -103,21 +101,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setWorkoutData({ duration: 0, steps: 0, calories: 0 });
 
     } else {
-      // BẮT ĐẦU TẬP
+      // === BẮT ĐẦU TẬP ===
       setIsWorkoutRunning(true);
       
-      // [QUAN TRỌNG] Vòng lặp chạy mỗi giây
       workoutTimer.current = setInterval(() => {
         setWorkoutData(prev => {
             const nextSteps = prev.steps + Math.floor(Math.random() * 3) + 1;
-            
             const newData = {
                 duration: prev.duration + 1,
                 steps: nextSteps,
                 calories: Math.floor(nextSteps * 0.04)
             };
 
-            // Gửi sang Điện thoại (Realtime)
+            // GỬI REALTIME (Không lưu)
             SocketService.emitLiveWorkout(newData);
 
             return newData;
