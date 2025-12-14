@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const { pool } = require('../config/db');
 
 /**
  * Watch App Socket Event Handlers
@@ -22,7 +22,7 @@ function watchHandlers(io, socket) {
             }
 
             // Save to watch_measurements table
-            const [result] = await db.query(
+            const [result] = await pool.query(
                 `INSERT INTO watch_measurements 
                 (user_id, type, heart_rate, spo2, stress, steps, calories, duration) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -80,7 +80,7 @@ function watchHandlers(io, socket) {
      */
     socket.on('watch:live:health', (data) => {
         console.log(`💓 Live health from user ${socket.userId}:`, data);
-        
+
         // Forward to all user's devices (real-time, không lưu DB)
         io.to(`user_${socket.userId}`).emit('watch:update', {
             userId: socket.userId,
@@ -99,7 +99,7 @@ function watchHandlers(io, socket) {
      */
     socket.on('watch:live:workout', (data) => {
         console.log(`🏃 Live workout from user ${socket.userId}:`, data);
-        
+
         // Forward to all user's devices (real-time, không lưu DB)
         io.to(`user_${socket.userId}`).emit('watch:update', {
             userId: socket.userId,
@@ -120,7 +120,7 @@ function watchHandlers(io, socket) {
         try {
             console.log(`📱 User ${socket.userId} requested latest measurement`);
 
-            const [rows] = await db.query(
+            const [rows] = await pool.query(
                 `SELECT 
                     id,
                     user_id,
