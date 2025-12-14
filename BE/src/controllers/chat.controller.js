@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const chatModel = require('../models/chat.model'); 
+const chatModel = require('../models/chat.model');
 
 // Khởi tạo Gemini Client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // === RÀNG BUỘC CHẶT HƠN (Đã cập nhật) ===
 const systemInstruction = {
     role: "user",
-    parts: [{ 
+    parts: [{
         text: `
         BẠN LÀ MỘT BOT CHAT Y TẾ CHUYÊN VỀ DA LIỄU, TÊN 'CheckMyHealth Assistant'.
         NHIỆM VỤ CỦA BẠN LÀ TUÂN THỦ TUYỆT ĐỐI CÁC QUY TẮC SAU:
@@ -21,7 +21,7 @@ const systemInstruction = {
         `
     }],
 };
-const systemResponse = { 
+const systemResponse = {
     role: "model",
     parts: [{ text: "Vâng, tôi đã hiểu. Tôi là CheckMyHealth Assistant và tôi sẽ CHỈ trả lời các câu hỏi về da liễu và luôn kèm theo cảnh báo y tế." }]
 };
@@ -42,16 +42,16 @@ const chatController = {
 
             // === SỬA LỖI: QUAY LẠI MODEL "gemini-pro-latest" ===
             // (Bạn đã xác nhận model này hoạt động)
-            const model = genAI.getGenerativeModel({ model: "gemini-pro-latest" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
             // ===============================================
-            
+
             // Tải Lịch sử Chat Cũ (giới hạn số lượt gần nhất để giảm tải)
             const dbHistory = await chatModel.getHistory(userId, 50);
             const geminiHistory = dbHistory.map(entry => ({
                 role: entry.role,
                 parts: [{ text: entry.content }]
             }));
-            
+
             // Bắt đầu chat với Lịch sử (bao gồm quy tắc)
             const chat = model.startChat({
                 history: [
@@ -75,17 +75,17 @@ const chatController = {
             for await (const chunk of result.stream) {
                 const chunkText = chunk.text();
                 fullReplyText += chunkText; // Nối mẩu vào
-                
+
                 // Gửi mẩu này về App Flutter ngay lập tức
-                res.write(chunkText); 
+                res.write(chunkText);
             }
-            
+
             // 4. Lưu lịch sử (sau khi đã có câu trả lời đầy đủ)
             await chatModel.createEntry(userId, 'user', message);
             await chatModel.createEntry(userId, 'model', fullReplyText);
-            
+
             // 5. Kết thúc luồng
-            res.end(); 
+            res.end();
 
         } catch (error) {
             console.error("Lỗi khi gọi Gemini API:", error);
