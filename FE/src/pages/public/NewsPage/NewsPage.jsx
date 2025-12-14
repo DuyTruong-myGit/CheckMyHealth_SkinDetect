@@ -1,0 +1,249 @@
+import { useEffect, useState, useMemo } from 'react'
+import '../../user/HistoryPage/History.css'
+import newsService from '../../../services/features/newsService.js'
+import { Pagination, Skeleton, EmptyState, Breadcrumbs } from '../../../components/ui'
+import showToast from '../../../utils/toast'
+import { usePageTitle } from '../../../hooks/usePageTitle.js'
+
+const NewsPage = () => {
+  usePageTitle('Tin tức')
+  const [sources, setSources] = useState([])
+  const [articles, setArticles] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(12)
+  const [customItemsPerPage, setCustomItemsPerPage] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // Load sources from API
+  const loadSources = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const data = await newsService.getAllSources()
+      setSources(data || [])
+      return data || []
+    } catch (err) {
+      console.error('Error loading sources:', err)
+      showToast.error('Lỗi khi tải danh sách nguồn tin')
+      return []
+    }
+  }
+
+  // Sort articles by timestamp (newest to oldest)
+  const sortArticlesByTime = (articles) => {
+    return [...articles].sort((a, b) => {
+      // Sắp xếp theo timestamp (newest first)
+      // Nếu không có timestamp, sử dụng id (parse timestamp từ id format: `${i}-${timestamp}`)
+      const getTimestamp = (article) => {
+        if (article.timestamp) {
+          return article.timestamp
+        }
+        // Parse timestamp từ id nếu có format `${i}-${timestamp}`
+        const idParts = article.id?.split('-')
+        if (idParts && idParts.length > 1) {
+          const timestamp = parseInt(idParts[idParts.length - 1])
+          if (!isNaN(timestamp)) {
+            return timestamp
+          }
+        }
+        return 0
+      }
+
+      const timestampA = getTimestamp(a)
+      const timestampB = getTimestamp(b)
+      return timestampB - timestampA // Newest to oldest
+    })
+  }
+
+  // Scrape articles from all sources
+  const scrapeArticles = async (sourcesToScrape) => {
+    if (!sourcesToScrape || sourcesToScrape.length === 0) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setArticles([])
+
+      // Scrape all sources concurrently
+      const results = await Promise.all(
+        sourcesToScrape.map(async (source) => {
+          try {
+            const articles = await newsService.scrapeNews(source.url)
+            return articles || []
+          } catch (e) {
+            console.error(`Error scraping ${source.url}:`, e)
+            return []
+          }
+        })
+      )
+
+      // Flatten all articles from all sources
+      const allArticles = results.flat()
+      // Sort articles by timestamp (newest to oldest)
+      const sortedArticles = sortArticlesByTime(allArticles)
+      setArticles(sortedArticles)
+      setCurrentPage(1)
+      if (allArticles.length === 0) {
+        setError('Không tìm thấy bài báo nào')
+      }
+    } catch (err) {
+      console.error('Error scraping articles:', err)
+      showToast.error(err.message || 'Lỗi khi tải tin tức')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load sources on mount
+  useEffect(() => {
+    const initLoad = async () => {
+      const loadedSources = await loadSources()
+      await scrapeArticles(loadedSources)
+    }
+    initLoad()
+  }, [])
+
+  // Paginated articles slice
+  const paginatedArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return articles.slice(startIndex, endIndex)
+  }, [articles, currentPage, itemsPerPage])
+
+  return (
+    <div className="history-container">
+      <Breadcrumbs />
+      <div className="history-card">
+        <h1 className="history-title">Tin tức</h1>
+        <p className="history-subtitle">
+          Tổng hợp bài báo sức khỏe từ các trang tin uy tín
+        </p>
+
+        {error && (
+          <div style={{ background: '#fed7d7', color: '#c53030', padding: 12, borderRadius: 6, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div style={{ padding: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              <Skeleton variant="card" height="300px" count={6} />
+            </div>
+          </div>
+        )}
+
+        {!loading && sources.length === 0 && (
+          <EmptyState
+            icon="📰"
+            title="Chưa có nguồn tin"
+            message="Chưa có nguồn tin nào. Vui lòng liên hệ admin để thêm nguồn tin y tế."
+          />
+        )}
+
+        {!loading && sources.length > 0 && articles.length === 0 && !error && (
+          <EmptyState
+            icon="📭"
+            title="Chưa có bài báo"
+            message="Chưa tải được bài báo từ các nguồn tin. Vui lòng thử lại sau."
+          />
+        )}
+
+        {!loading && articles.length > 0 && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              {paginatedArticles.map((article) => (
+                <a
+                  key={article.id}
+                  href={article.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    background: 'white',
+                    transition: 'all 0.2s',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  {article.image && (
+                    <div style={{ width: '100%', height: 160, overflow: 'hidden', background: '#f3f4f6' }}>
+                      <img
+                        src={article.image}
+                        alt={article.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600, color: '#1a202c', lineHeight: 1.4 }}>
+                      {article.title}
+                    </h3>
+                    {article.description && (
+                      <p style={{ margin: '0 0 8px 0', fontSize: 13, color: '#4a5568', lineHeight: 1.4, flex: 1 }}>
+                        {article.description}
+                      </p>
+                    )}
+                    <div style={{ marginTop: 'auto', fontSize: 12, color: '#a0aec0' }}>
+                      Nguồn: {article.source}
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.max(1, Math.ceil(articles.length / itemsPerPage))}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={articles.length}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1) }}
+                customItemsPerPage={customItemsPerPage}
+                onCustomItemsPerPageChange={setCustomItemsPerPage}
+                itemLabel="bài báo"
+              />
+            </div>
+          </>
+        )}
+
+        {!loading && articles.length === 0 && sources.length > 0 && !error && (
+          <div style={{ textAlign: 'center', padding: 32, color: '#718096' }}>
+            <p>Không tìm thấy bài báo nào. Thử lại sau.</p>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+export default NewsPage

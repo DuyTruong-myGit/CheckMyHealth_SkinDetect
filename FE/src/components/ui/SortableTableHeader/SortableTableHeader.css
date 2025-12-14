@@ -1,0 +1,41 @@
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.sortable-header:hover {
+  background-color: rgba(248, 250, 252, 0.1);
+}
+
+.sortable-header__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sortable-header__arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-size: 0.7rem;
+  line-height: 0.8;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.sortable-header:hover .sortable-header__arrows {
+  opacity: 1;
+}
+
+.sortable-header__arrow {
+  color: #cbd5e0;
+  transition: color 0.2s;
+}
+
+.sortable-header__arrow--active {
+  color: #0066CC;
+  font-weight: bold;
+}
+

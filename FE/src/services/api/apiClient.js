@@ -1,0 +1,119 @@
+import { API_BASE_URL, API_TIMEOUT } from '../../config/api.js'
+
+const buildUrl = (path) => {
+  if (path.startsWith('http')) return path
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${API_BASE_URL}${normalizedPath}`
+}
+
+// Lấy token từ localStorage
+const getToken = () => {
+  try {
+    return localStorage.getItem('token')
+  } catch (error) {
+    return null
+  }
+}
+
+export const apiClient = async (path, options = {}) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT)
+
+  // Lấy token nếu có
+  const token = getToken()
+
+  const isFormData = options.body instanceof FormData
+
+  // Xây dựng headers
+  const headers = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(options.headers ?? {}),
+  }
+
+  // Thêm Authorization header nếu có token và chưa có trong options.headers
+  if (token && !options.headers?.Authorization && !options.headers?.authorization) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(buildUrl(path), {
+      headers,
+      signal: controller.signal,
+      ...options,
+    })
+
+    if (!response.ok) {
+      // Nếu là lỗi 401, có thể token đã hết hạn hoặc route yêu cầu auth
+      if (response.status === 401) {
+        // Chỉ remove token nếu có token (có thể route public nhưng có token hết hạn)
+        if (token) {
+          localStorage.removeItem('token')
+        }
+        // Nếu không có token và route yêu cầu auth, throw error
+        if (!token) {
+          throw new Error('Không tìm thấy token. Yêu cầu truy cập bị từ chối.')
+        }
+      }
+
+      // Xử lý account bị ban/suspended (403)
+      if (response.status === 403) {
+        let errorMessage = 'Tài khoản của bạn đang bị đình chỉ. Vui lòng liên hệ quản trị viên.'
+        try {
+          const cloned = response.clone()
+          const errorData = await cloned.json()
+          errorMessage = errorData.message || errorMessage
+        } catch {
+          // Nếu không parse được JSON, dùng message mặc định
+        }
+        // Nếu có token, xóa token và trigger logout
+        if (token) {
+          localStorage.removeItem('token')
+          // Dispatch event để AuthContext có thể xử lý
+          window.dispatchEvent(new CustomEvent('account-banned', { detail: { message: errorMessage } }))
+        }
+        throw new Error(errorMessage)
+      }
+
+      // Xử lý rate limit errors (429)
+      if (response.status === 429) {
+        let errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.'
+        try {
+          const cloned = response.clone()
+          const errorData = await cloned.json()
+          errorMessage = errorData.message || errorMessage
+        } catch {
+          // Nếu không parse được JSON, dùng message mặc định
+        }
+        throw new Error(errorMessage)
+      }
+
+      let errorMessage
+      try {
+        const cloned = response.clone()
+        const errorData = await cloned.json()
+        errorMessage = errorData.message || errorData.error || `Request failed with status ${response.status}`
+      } catch {
+        try {
+          errorMessage = await response.text()
+        } catch {
+          errorMessage = ''
+        }
+        if (!errorMessage) {
+          errorMessage = `Request failed with status ${response.status}`
+        }
+      }
+
+      throw new Error(errorMessage)
+    }
+
+    if (response.status === 204) {
+      return null
+    }
+
+    return response.json()
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+
