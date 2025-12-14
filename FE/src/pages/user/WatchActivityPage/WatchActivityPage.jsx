@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { usePageTitle } from '../../../hooks/usePageTitle.js'
 import { getWatchMeasurements, getWatchStats } from '../../../services/features/watchService.js'
-import { Pagination, Skeleton, EmptyState } from '../../../components/ui'
+import { Pagination, Skeleton, EmptyState, Breadcrumbs } from '../../../components/ui'
 import showToast from '../../../utils/toast'
 
 const WatchActivityPage = () => {
