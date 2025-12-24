@@ -53,7 +53,7 @@ const callAiApiReal = async (imageUrl) => {
         form.append('file', imageResponse.data, { filename: 'skin.jpg', contentType: 'image/jpeg' });
 
         console.log('[AI] Đang gọi Server AI...');
-        const aiResponse = await axios.post('https://skin-lesion-api.fly.dev/predict', form, {
+        const aiResponse = await axios.post('https://train-ai-exam.fly.dev/predict', form, {
             headers: { ...form.getHeaders() },
             timeout: 90000
         });
