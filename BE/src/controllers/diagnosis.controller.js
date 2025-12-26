@@ -194,7 +194,7 @@ const callAiApiReal = async (imageUrl) => {
         console.log('[3] Đang gửi Buffer sang Server AI...');
         
         // SỬA ĐỔI 2: Cấu hình Axios tối ưu
-        const aiResponse = await axios.post('https://skin-train-exam.onrender.com/predict', form, {
+        const aiResponse = await axios.post('https://train-ai-exam.fly.dev/', form, {
             headers: { 
                 ...form.getHeaders(), // Header quan trọng của FormData
                 'Content-Length': form.getLengthSync() // Giúp Server AI biết kích thước file
