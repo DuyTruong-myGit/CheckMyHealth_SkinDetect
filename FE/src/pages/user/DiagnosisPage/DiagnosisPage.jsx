@@ -95,8 +95,15 @@ const DiagnosisPage = () => {
     } catch (err) {
       const errorMsg = err?.message || err?.toString?.() || 'Chuẩn đoán thất bại. Vui lòng thử lại.'
       console.error('Diagnosis failed:', errorMsg)
+
+      // Show inline error
+      setError(errorMsg)
+
+      // Also show toast
       showToast.error(errorMsg)
+
       if (err?.recommendation) {
+        setErrorRecommendation(err.recommendation)
         showToast.info(err.recommendation, { autoClose: 5000 })
       }
     } finally {

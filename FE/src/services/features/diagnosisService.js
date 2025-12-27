@@ -17,7 +17,7 @@ export const diagnose = async (imageFile) => {
     if (!token) {
       throw new Error('Bạn cần đăng nhập để sử dụng tính năng này')
     }
-    
+
     // Gọi API với FormData (không set Content-Type, browser sẽ tự set với boundary)
     const response = await fetch(`${API_BASE_URL}/api/diagnose`, {
       method: 'POST',
@@ -37,14 +37,15 @@ export const diagnose = async (imageFile) => {
     if (!response.ok) {
       let errorMessage = `Lỗi ${response.status}: ${response.statusText}`
       let recommendation
-      
+
       try {
         const contentType = response.headers.get('content-type') || ''
-        
+
         // Chỉ parse JSON nếu response type là JSON
         if (contentType.includes('application/json')) {
           const errorData = await response.json()
-          errorMessage = errorData.message || errorData.error || errorMessage
+          // Prioritize description from BE for specific errors
+          errorMessage = errorData.description || errorData.message || errorData.error || errorMessage
           if (errorData?.recommendation) {
             recommendation = errorData.recommendation
           }
@@ -61,7 +62,7 @@ export const diagnose = async (imageFile) => {
       } catch (e) {
         // Nếu không thể đọc response body, giữ nguyên status message
       }
-      
+
       const error = new Error(errorMessage)
       if (recommendation) {
         error.recommendation = recommendation
@@ -76,12 +77,12 @@ export const diagnose = async (imageFile) => {
     // Log để debug
     console.error('Diagnosis error:', error)
     console.error('Error stack:', error.stack)
-    
+
     // Nếu là Error object
     if (error instanceof Error) {
       throw error
     }
-    
+
     throw new Error(error?.message || error?.toString?.() || 'Chuẩn đoán thất bại. Vui lòng thử lại.')
   }
 }
