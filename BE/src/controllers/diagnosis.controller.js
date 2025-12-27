@@ -1,48 +1,38 @@
 const diagnosisModel = require('../models/diagnosis.model');
 const axios = require('axios');
-const FormData = require('form-data');
 const { pool } = require('../config/db');
 
-// === 1. BẢNG ÁNH XẠ (MAP) MỚI ===
-// Key: Phải TRÙNG KHỚP 100% với output của infer.py (snake_case)
-// Value: Là disease_code trong Database MySQL của bạn
+// ===== AI TO DATABASE MAPPING =====
+// Key: Khớp 100% với output từ AI API (có space, Title Case)
+// Value: disease_code trong MySQL database
 const AI_TO_DB_MAP = {
-    // Ung thư & Tiền ung thư
-    'actinic_keratosis':        'Actinic Keratosis',
-    'basal_cell_carcinoma':     'Basal Cell Carcinoma',
-    'melanoma':                 'Melanoma',
-    'squamous_cell_carcinoma':  'Squamous Cell Carcinoma',
-
-    // Lành tính
-    'dermatofibroma':           'Dermatofibroma',
-    'nevus':                    'Nevus',
-    'pigmented_benign_keratosis':'Pigmented Benign Keratosis',
-    'seborrheic_keratosis':     'Seborrheic Keratosis',
-    'vascular_lesion':          'Vascular Lesion',
-
-    // Nhiễm trùng / Khác
-    'ringworm':                 'Ringworm',
-    
-    // Da khỏe mạnh
-    'normal_skin':              'Normal Skin' 
+    'Actinic Keratosis': 'Actinic Keratosis',
+    'Basal Cell Carcinoma': 'Basal Cell Carcinoma',
+    'Dermato Fibroma': 'Dermato Fibroma',
+    'Melanoma': 'Melanoma',
+    'Nevus': 'Nevus',
+    'Normal Skin': 'Normal Skin',
+    'Pigmented Benign Keratosis': 'Pigmented Benign Keratosis',
+    'Ringworm': 'Ringworm',
+    'Seborrheic Keratosis': 'Seborrheic Keratosis',
+    'Squamous Cell Carcinoma': 'Squamous Cell Carcinoma',
+    'Unknown_Normal': 'Unknown_Normal',
+    'Vascular Lesion': 'Vascular Lesion'
 };
 
-// === 2. HÀM VALIDATE HÌNH ẢNH ===
-const validateSkinImage = (aiResult) => {
-    const label = aiResult.prediction;
-    const confidence = aiResult.confidence;
-
-    // Case 1: AI trả về unknown_normal (Không phải da hoặc ảnh quá mờ)
-    if (label === 'unknown_normal') {
+// ===== VALIDATE SKIN IMAGE =====
+const validateSkinImage = (predictedClass, confidence) => {
+    // Case 1: Unknown/Invalid image
+    if (predictedClass === 'Unknown_Normal') {
         return {
             isValid: false,
             reason: 'not_skin_image',
-            message: 'Hình ảnh không phải là vùng da hoặc không đủ rõ nét. Vui lòng chụp lại.'
+            message: 'Hình ảnh không rõ ràng hoặc không phải là vùng da. Vui lòng chụp lại.'
         };
     }
 
-    // Case 2: Da khỏe mạnh
-    if (label === 'normal_skin') {
+    // Case 2: Normal healthy skin
+    if (predictedClass === 'Normal Skin') {
         return {
             isValid: true,
             isDisease: false,
@@ -50,9 +40,9 @@ const validateSkinImage = (aiResult) => {
         };
     }
 
-    // Case 3: Bệnh chưa có trong Map
-    if (!AI_TO_DB_MAP[label]) {
-        console.warn(`[AI Warning] Class mới chưa được map: ${label}`);
+    // Case 3: Disease not in mapping
+    if (!AI_TO_DB_MAP[predictedClass]) {
+        console.warn(`[AI Warning] Unmapped class detected: ${predictedClass}`);
         return {
             isValid: false,
             reason: 'unsupported_disease',
@@ -60,159 +50,69 @@ const validateSkinImage = (aiResult) => {
         };
     }
 
-    // Case 4: Độ tin cậy thấp (Dự phòng, vì AI Python đã lọc < 0.55 rồi)
-    if (confidence < 0.4) {
+    // Case 4: Low confidence score
+    if (confidence < 0.5) {
         return {
             isValid: false,
             reason: 'low_confidence',
-            message: 'Độ tin cậy thấp. Vui lòng chụp ảnh rõ nét hơn.'
+            message: 'Độ tin cậy thấp. Vui lòng chụp ảnh rõ nét hơn với ánh sáng tốt.'
         };
     }
 
     return { isValid: true, isDisease: true };
 };
 
-// === 3. HÀM GỌI API AI ===
-// const callAiApiReal = async (imageUrl) => {
-//     const startTime = Date.now();
-//     try {
-//         console.log(`[AI] Đang tải ảnh từ Cloudinary: ${imageUrl}`);
-        
-//         // 1. Tải ảnh từ URL về buffer
-//         const imageResponse = await axios.get(imageUrl, { responseType: 'stream', timeout: 15000 });
-        
-//         const form = new FormData();
-//         form.append('file', imageResponse.data, { filename: 'skin.jpg', contentType: 'image/jpeg' });
-
-//         // 2. Gọi sang Server AI (Python FastAPI)
-//         // LƯU Ý: Đảm bảo URL này đúng với server deploy của bạn
-//         console.log('[AI] Đang gửi sang Server AI...');
-//         const aiResponse = await axios.post('https://skin-train-exam.onrender.com/predict', form, {
-//             headers: { ...form.getHeaders() },
-//             timeout: 90000 // Timeout dài cho lần khởi động đầu tiên (cold start)
-//         });
-
-//         const responseTime = Date.now() - startTime;
-//         const aiResult = aiResponse.data;
-        
-//         // 3. Validate kết quả
-//         if (!aiResult || !aiResult.success) throw new Error('AI API Error: No success flag');
-        
-//         const validation = validateSkinImage(aiResult);
-//         if (!validation.isValid) {
-//             return {
-//                 success: false,
-//                 error_type: validation.reason,
-//                 description: validation.message,
-//                 is_valid_skin_image: false
-//             };
-//         }
-
-//         // 4. Xử lý Logic Database
-//         const predictedClass = aiResult.prediction; // Ví dụ: 'basal_cell_carcinoma'
-//         const dbDiseaseCode = AI_TO_DB_MAP[predictedClass]; // Ví dụ: 'Basal Cell Carcinoma'
-        
-//         let diseaseInfo = null;
-//         let diseaseNameVi = "Chưa cập nhật tiếng Việt";
-//         let infoId = null;
-
-//         // Nếu là bệnh (không phải da thường), mới tìm trong DB
-//         if (validation.isDisease) {
-//             try {
-//                 const [rows] = await pool.query(
-//                     'SELECT info_id, disease_name_vi, description FROM skin_diseases_info WHERE disease_code = ?', 
-//                     [dbDiseaseCode]
-//                 );
-                
-//                 if (rows.length > 0) {
-//                     diseaseInfo = rows[0];
-//                     diseaseNameVi = diseaseInfo.disease_name_vi;
-//                     infoId = diseaseInfo.info_id;
-//                 }
-//             } catch (dbError) {
-//                 console.error('DB Error:', dbError);
-//             }
-//         } else {
-//             // Trường hợp Normal Skin
-//             diseaseNameVi = "Da khỏe mạnh";
-//         }
-
-//         // Ưu tiên mô tả từ DB, nếu không có thì dùng từ AI, nếu không thì báo trống
-//         const description = diseaseInfo ? diseaseInfo.description : (aiResult.description || "");
-        
-//         // Lấy recommendation và risk từ AI (Model mới hỗ trợ cái này)
-//         const recommendation = aiResult.recommendation || "Vui lòng theo dõi thêm.";
-//         const riskLevel = aiResult.risk_level || "unknown";
-
-//         return {
-//             success: true,
-//             is_valid_skin_image: true,
-//             image_url: imageUrl,
-            
-//             disease_name: dbDiseaseCode || "Normal Skin",
-//             disease_name_vi: diseaseNameVi,
-//             info_id: infoId,
-            
-//             confidence_score: aiResult.confidence || 0.0,
-//             description: description,
-//             recommendation: recommendation,
-//             risk_level: riskLevel, // Mới: dùng để hiện màu sắc cảnh báo ở FE
-            
-//             prediction_code: predictedClass,
-//             response_time_ms: responseTime
-//         };
-
-//     } catch (error) {
-//         console.error('AI Logic Error:', error.message);
-//         // Trả về lỗi chung để FE xử lý
-//         return { 
-//             success: false, 
-//             error_type: 'processing_error', 
-//             description: 'Lỗi kết nối đến hệ thống AI. Vui lòng thử lại sau.' 
-//         };
-//     }
-// };
+// ===== CALL AI API =====
 const callAiApiReal = async (imageUrl) => {
     const startTime = Date.now();
+    
     try {
-        console.log(`[1] Đang tải ảnh về bộ nhớ: ${imageUrl}`);
+        console.log(`[1] 📥 Đang tải ảnh từ Cloudinary: ${imageUrl}`);
         
-        // SỬA ĐỔI 1: Tải ảnh dưới dạng 'arraybuffer' (Buffer) thay vì 'stream'
-        // Cách này an toàn hơn, tránh bị treo luồng
+        // Step 1: Download image from Cloudinary as buffer
         const imageResponse = await axios.get(imageUrl, { 
-            responseType: 'arraybuffer', 
-            timeout: 10000 
+            responseType: 'arraybuffer',
+            timeout: 15000 
         });
         
         const buffer = Buffer.from(imageResponse.data);
-        console.log(`[2] Đã tải ảnh xong. Kích thước: ${buffer.length} bytes`);
-
-        const form = new FormData();
-        // Lưu ý: Phải đặt tên file là 'skin.jpg' để server Python nhận diện
-        form.append('file', buffer, { filename: 'skin.jpg', contentType: 'image/jpeg' });
-
-        console.log('[3] Đang gửi Buffer sang Server AI...');
+        const base64Image = buffer.toString('base64');
         
-        // SỬA ĐỔI 2: Cấu hình Axios tối ưu
-        const aiResponse = await axios.post('https://train-ai-exam.fly.dev/', form, {
-            headers: { 
-                ...form.getHeaders(), // Header quan trọng của FormData
-                'Content-Length': form.getLengthSync() // Giúp Server AI biết kích thước file
+        console.log(`[2] 📤 Đang gửi ảnh tới AI API (${buffer.length} bytes)`);
+        
+        // Step 2: Call AI API with correct format
+        const aiResponse = await axios.post('https://train-ai-exam.fly.dev/predict', {
+            image: base64Image
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
             },
+            timeout: 90000, // 90 seconds for cold start
             maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            timeout: 90000 // 90 giây
+            maxBodyLength: Infinity
         });
 
-        console.log('[4] Server AI đã phản hồi!'); // Nếu thấy dòng này là thành công
-
+        console.log('[3] ✅ AI API đã phản hồi thành công!');
+        
         const responseTime = Date.now() - startTime;
         const aiResult = aiResponse.data;
         
-        // Validate kết quả
-        if (!aiResult || !aiResult.success) throw new Error('AI API Error: No success flag');
+        // Step 3: Validate AI response structure
+        if (!aiResult || aiResult.status !== 'success') {
+            console.error('[AI Error] Invalid response structure:', aiResult);
+            throw new Error('AI API returned invalid response structure');
+        }
         
-        const validation = validateSkinImage(aiResult);
+        // Step 4: Extract prediction data
+        const predictedClass = aiResult.prediction.class;
+        const confidence = aiResult.prediction.confidence;
+        const confidencePercent = aiResult.prediction.confidence_percent;
+        
+        console.log(`[4] 🔍 Prediction: ${predictedClass} (${confidencePercent})`);
+        
+        // Step 5: Validate prediction
+        const validation = validateSkinImage(predictedClass, confidence);
+        
         if (!validation.isValid) {
             return {
                 success: false,
@@ -222,14 +122,14 @@ const callAiApiReal = async (imageUrl) => {
             };
         }
 
-        // --- (Phần xử lý Logic Database giữ nguyên như cũ) ---
-        const predictedClass = aiResult.prediction;
+        // Step 6: Map to database disease code
         const dbDiseaseCode = AI_TO_DB_MAP[predictedClass];
         
         let diseaseInfo = null;
         let diseaseNameVi = "Chưa cập nhật tiếng Việt";
         let infoId = null;
 
+        // Step 7: Query database for disease info (only if it's a disease)
         if (validation.isDisease) {
             try {
                 const [rows] = await pool.query(
@@ -241,95 +141,182 @@ const callAiApiReal = async (imageUrl) => {
                     diseaseInfo = rows[0];
                     diseaseNameVi = diseaseInfo.disease_name_vi;
                     infoId = diseaseInfo.info_id;
+                    console.log(`[5] 📚 Found disease info in DB: ${diseaseNameVi}`);
+                } else {
+                    console.warn(`[5] ⚠️  Disease code not found in DB: ${dbDiseaseCode}`);
                 }
             } catch (dbError) {
-                console.error('DB Error:', dbError);
+                console.error('[5] ❌ Database query error:', dbError);
             }
         } else {
             diseaseNameVi = "Da khỏe mạnh";
+            console.log('[5] ✅ Normal healthy skin detected');
         }
 
-        const description = diseaseInfo ? diseaseInfo.description : (aiResult.description || "");
-        const recommendation = aiResult.recommendation || "Vui lòng theo dõi thêm.";
-        const riskLevel = aiResult.risk_level || "unknown";
+        // Step 8: Prepare response
+        const description = diseaseInfo?.description || "";
+        const top3 = aiResult.top3_predictions || [];
+        
+        // Determine risk level based on confidence and disease type
+        let riskLevel = 'low';
+        if (validation.isDisease) {
+            if (confidence >= 0.85) riskLevel = 'high';
+            else if (confidence >= 0.7) riskLevel = 'medium';
+            
+            // Cancer types should be high risk regardless of confidence
+            const cancerTypes = ['Melanoma', 'Basal Cell Carcinoma', 'Squamous Cell Carcinoma'];
+            if (cancerTypes.includes(predictedClass)) {
+                riskLevel = 'high';
+            }
+        }
 
-        return {
+        const result = {
             success: true,
             is_valid_skin_image: true,
             image_url: imageUrl,
+            
+            // Disease information
             disease_name: dbDiseaseCode || "Normal Skin",
             disease_name_vi: diseaseNameVi,
             info_id: infoId,
-            confidence_score: aiResult.confidence || 0.0,
+            
+            // Prediction details
+            confidence_score: confidence,
+            confidence_percent: confidencePercent,
             description: description,
-            recommendation: recommendation,
+            recommendation: "Vui lòng tham khảo ý kiến bác sĩ chuyên khoa da liễu để được chẩn đoán chính xác.",
             risk_level: riskLevel,
+            
+            // Additional data
             prediction_code: predictedClass,
+            top3_predictions: top3,
+            all_probabilities: aiResult.all_probabilities || {},
+            
+            // Metadata
             response_time_ms: responseTime
         };
 
+        console.log(`[6] ✅ Processing complete in ${responseTime}ms`);
+        return result;
+
     } catch (error) {
-        // Log chi tiết lỗi để debug
+        const responseTime = Date.now() - startTime;
+        
+        // Log detailed error information
         if (error.response) {
-            console.error('[AI Error Response]:', error.response.status, error.response.data);
+            console.error('[AI API Error]', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                data: error.response.data
+            });
+        } else if (error.request) {
+            console.error('[AI Network Error] No response received:', error.message);
         } else {
             console.error('[AI Logic Error]:', error.message);
         }
         
+        // Return user-friendly error
         return { 
             success: false, 
             error_type: 'processing_error', 
-            description: 'Lỗi xử lý. Vui lòng thử lại.' 
+            description: 'Lỗi kết nối đến hệ thống AI. Vui lòng thử lại sau.',
+            response_time_ms: responseTime
         };
     }
 };
+
+// ===== CONTROLLER =====
 const diagnosisController = {
-    // API: POST /api/diagnose
+    /**
+     * POST /api/diagnose
+     * Diagnose skin disease from uploaded image
+     */
     diagnose: async (req, res) => {
         try {
-            // Kiểm tra file upload
-            if (!req.file) return res.status(400).json({ message: 'Vui lòng upload ảnh.' });
+            // Validate file upload
+            if (!req.file) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: 'Vui lòng upload ảnh.' 
+                });
+            }
             
-            // Lấy URL ảnh từ Cloudinary
+            // Get image URL from Cloudinary
             const imageUrl = req.file.secure_url || req.file.url;
             
-            // Gọi hàm xử lý AI
+            console.log('='.repeat(60));
+            console.log('🔬 NEW DIAGNOSIS REQUEST');
+            console.log(`👤 User ID: ${req.user.userId}`);
+            console.log(`🖼️  Image URL: ${imageUrl}`);
+            console.log('='.repeat(60));
+            
+            // Call AI API
             const result = await callAiApiReal(imageUrl);
 
-            // Nếu thất bại (ảnh rác, lỗi server...)
+            // If failed (invalid image, low confidence, etc.)
             if (!result.success) {
+                console.log('❌ Diagnosis failed:', result.error_type);
                 return res.status(400).json(result);
             }
 
-            // Lưu lịch sử vào DB
-            await diagnosisModel.create(
-                req.user.userId,
-                imageUrl, 
-                result.disease_name, 
-                result.confidence_score,
-                result // Lưu toàn bộ JSON kết quả vào cột result_json
-            );
+            // Save to database
+            try {
+                await diagnosisModel.create(
+                    req.user.userId,
+                    imageUrl, 
+                    result.disease_name, 
+                    result.confidence_score,
+                    result // Save full result as JSON
+                );
+                console.log('💾 Saved to database successfully');
+            } catch (dbError) {
+                console.error('⚠️  Failed to save to database:', dbError);
+                // Continue anyway, don't fail the request
+            }
 
+            console.log('✅ Diagnosis completed successfully');
+            console.log('='.repeat(60));
+            
             res.status(200).json(result);
 
         } catch (error) {
-            console.error("Diagnose Controller Error:", error);
-            res.status(500).json({ message: 'Lỗi máy chủ nội bộ', error: error.message });
+            console.error("❌ Diagnose Controller Error:", error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Lỗi máy chủ nội bộ', 
+                error: error.message 
+            });
         }
     },
 
-    // API: GET /api/diagnose/history
+    /**
+     * GET /api/diagnose/history
+     * Get diagnosis history for current user
+     */
     getHistory: async (req, res) => {
         try {
             const userId = req.user.userId;
             const history = await diagnosisModel.findByUserId(userId);
-            res.status(200).json(history);
+            
+            res.status(200).json({
+                success: true,
+                count: history.length,
+                data: history
+            });
         } catch (error) {
-            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+            console.error('Get History Error:', error);
+            res.status(500).json({ 
+                success: false,
+                message: 'Lỗi máy chủ', 
+                error: error.message 
+            });
         }
     },
 
-    // API: DELETE /api/diagnose/:id
+    /**
+     * DELETE /api/diagnose/:id
+     * Delete a diagnosis history item
+     */
     deleteHistoryItem: async (req, res) => {
         try {
             const { id } = req.params;
@@ -338,13 +325,23 @@ const diagnosisController = {
             const success = await diagnosisModel.deleteById(id, userId);
 
             if (success) {
-                res.status(200).json({ message: 'Đã xóa kết quả chẩn đoán.' });
+                res.status(200).json({ 
+                    success: true,
+                    message: 'Đã xóa kết quả chẩn đoán.' 
+                });
             } else {
-                res.status(404).json({ message: 'Không tìm thấy bản ghi hoặc bạn không có quyền xóa.' });
+                res.status(404).json({ 
+                    success: false,
+                    message: 'Không tìm thấy bản ghi hoặc bạn không có quyền xóa.' 
+                });
             }
         } catch (error) {
             console.error('Delete Error:', error);
-            res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+            res.status(500).json({ 
+                success: false,
+                message: 'Lỗi máy chủ', 
+                error: error.message 
+            });
         }
     }
 };
